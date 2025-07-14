@@ -13,19 +13,15 @@ use esp_hal::{
     rng::Rng,
     time::Rate,
 };
-use log::{error, info};
+use log::{error, info, warn};
 use sh1106::{
-    displayrotation::DisplayRotation,
-    displaysize::DisplaySize,
-    interface::I2cInterface,
-    mode::{GraphicsMode, displaymode::DisplayModeTrait},
+    Error as DisplayError, mode::displaymode::DisplayModeTrait, prelude::*,
     properties::DisplayProperties,
 };
 use static_cell::make_static;
 use tinybmp::Bmp;
 
 /// Initialize the display and spawn the display manager task.
-#[expect(clippy::unwrap_used)]
 pub(super) fn spawn(
     spawner: Spawner,
     rng: Rng,
@@ -35,43 +31,57 @@ pub(super) fn spawn(
 ) {
     // Create the I2C interface
     let config = Config::default().with_frequency(Rate::from_khz(400));
-    let i2c = I2c::new(i2c.into(), config).unwrap().with_sda(sda.into()).with_scl(scl.into());
+    let i2c = I2c::new(i2c.into(), config)
+        .expect("Failed to create I2C interface, invalid configuration");
+    let wrapper = I2cWrapper(i2c.with_sda(sda.into()).with_scl(scl.into()));
+    let iface = I2cInterface::new(wrapper, 0x3C);
 
-    // Create the display
-    let iface = I2cInterface::new(I2cWrapper(i2c), 0x3C);
+    // Create the kerfur display
     let properties =
         DisplayProperties::new(iface, DisplaySize::Display128x64, DisplayRotation::Rotate180);
-    let display = KerfurDisplay::new(GraphicsMode::new(properties), rng);
+    let kerfur = KerfurDisplay::new(GraphicsMode::new(properties), rng);
 
     // Spawn the display manager task
-    spawner.must_spawn(display_manager(display));
+    spawner.must_spawn(display_manager(kerfur));
 }
 
 /// An async task that manages the [`KerfurDisplay`].
-///
-/// TODO: Error handling and auto-recovery.
 #[embassy_executor::task]
 async fn display_manager(mut kerfur: KerfurDisplay) -> ! {
     info!("Starting display manager");
 
     loop {
+        // Execute the display loop, which will run until an error occurs.
         #[expect(clippy::match_single_binding)]
         match kerfur.execute().await {
-            Err(DisplayManagerError::I2C(err)) => match err {
+            Err(DisplayManagerError::DisplayI2c(err)) => match err {
                 err => error!("Display I2C error: {err:?}"),
             },
         }
+
+        // Wait 30 seconds before restarting the display manager
+        Timer::after_secs(30).await;
+        warn!("Attempting to restart display manager...");
     }
 }
-
-/// An alias for this abomination of a display type.
-type DisplayInterface<'d> = GraphicsMode<I2cInterface<I2cWrapper<'d, Blocking>>>;
 
 /// Errors that can occur in the display manager.
 #[non_exhaustive]
 enum DisplayManagerError {
-    /// An [`I2cError`] occurred while communicating with the display.
-    I2C(I2cError),
+    /// An error occurred while communicating with the display.
+    DisplayI2c(I2cError),
+}
+
+impl From<I2cError> for DisplayManagerError {
+    fn from(err: I2cError) -> Self { DisplayManagerError::DisplayI2c(err) }
+}
+impl From<DisplayError<I2cError, ()>> for DisplayManagerError {
+    fn from(err: DisplayError<I2cError, ()>) -> Self {
+        match err {
+            DisplayError::Comm(err) => Self::from(err),
+            DisplayError::Pin(()) => unreachable!(),
+        }
+    }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -108,19 +118,20 @@ impl KerfurDisplay {
     /// Only one display can ever exist.
     /// Calling this function twice will immediately panic.
     #[must_use]
-    #[expect(clippy::unwrap_used)]
-    fn new(mut display: DisplayInterface<'static>, rng: Rng) -> Self {
-        // Initialize and flush the display
-        display.init().unwrap();
-        display.flush().unwrap();
-
+    fn new(display: DisplayInterface<'static>, rng: Rng) -> Self {
         // Create static images for the frames
-        let neutral =
-            make_static!(Bmp::from_slice(include_bytes!("../assets/kerfur_neutral.bmp")).unwrap());
-        let blink =
-            make_static!(Bmp::from_slice(include_bytes!("../assets/kerfur_blink.bmp")).unwrap());
-        let meow =
-            make_static!(Bmp::from_slice(include_bytes!("../assets/kerfur_meow.bmp")).unwrap());
+        let neutral = make_static!(
+            Bmp::from_slice(include_bytes!("../assets/kerfur_neutral.bmp"))
+                .expect("Bmp image failed to parse from slice")
+        );
+        let blink = make_static!(
+            Bmp::from_slice(include_bytes!("../assets/kerfur_blink.bmp"))
+                .expect("Bmp image failed to parse from slice")
+        );
+        let meow = make_static!(
+            Bmp::from_slice(include_bytes!("../assets/kerfur_meow.bmp"))
+                .expect("Bmp image failed to parse from slice")
+        );
 
         Self {
             display,
@@ -132,27 +143,38 @@ impl KerfurDisplay {
     }
 
     /// Display a [`KerfurFace`] on the display.
-    fn display(&mut self, face: KerfurFace) -> Result<(), DisplayManagerError> {
+    fn display_face(&mut self, face: KerfurFace) -> Result<(), DisplayManagerError> {
         match face {
             KerfurFace::Neutral => self.neutral.draw(&mut self.display).unwrap(),
             KerfurFace::Blink => self.blink.draw(&mut self.display).unwrap(),
             KerfurFace::Meow => self.meow.draw(&mut self.display).unwrap(),
         }
-        match self.display.flush() {
-            Err(sh1106::Error::Comm(err)) => Err(DisplayManagerError::I2C(err)),
-            Ok(()) | Err(..) => Ok(()),
-        }
+        self.display.flush()?;
+        Ok(())
+    }
+
+    // ---------------------------------------------------------------------------------------------
+
+    /// Initialize and clear the display.
+    fn init(&mut self) -> Result<(), DisplayManagerError> {
+        self.display.init()?;
+        self.display.clear();
+        self.display.flush()?;
+        Ok(())
     }
 
     /// Run the kerfur display loop.
     async fn execute(&mut self) -> Result<!, DisplayManagerError> {
+        // Initialize the display
+        self.init()?;
+
         loop {
             // Display the neutral frame
-            self.display(KerfurFace::Neutral)?;
+            self.display_face(KerfurFace::Neutral)?;
 
             // Wait before showing the next frame
             {
-                // Have a ~1/32nd chance to short blink
+                // Have a ~1/32 chance to short blink
                 let delay = self.rng.random();
                 if delay.is_multiple_of(32) {
                     // Wait between 1.0 (0+1000) and 1.099 (99+1000) seconds before the next frame
@@ -165,20 +187,23 @@ impl KerfurDisplay {
 
             // Show the blink or meow frame
             {
-                // Have a ~1/16th chance to meow instead of blink
+                // Have a ~1/16 chance to meow instead of blink
                 if self.rng.random().is_multiple_of(16) {
                     // Display the meow frame
-                    self.display(KerfurFace::Meow)?;
+                    self.display_face(KerfurFace::Meow)?;
                     Timer::after_millis(500).await;
                 } else {
                     // Display the blink frame
-                    self.display(KerfurFace::Blink)?;
+                    self.display_face(KerfurFace::Blink)?;
                     Timer::after_millis(100).await;
                 }
             }
         }
     }
 }
+
+/// An alias for this abomination of a display type.
+type DisplayInterface<'d> = GraphicsMode<I2cInterface<I2cWrapper<'d, Blocking>>>;
 
 // -------------------------------------------------------------------------------------------------
 

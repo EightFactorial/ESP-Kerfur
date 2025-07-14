@@ -54,13 +54,13 @@ strip = "debuginfo"
 # Embassy/Embedded
 embassy-executor = { features = ["defmt", "task-arena-size-81920"], version = "0.7" }
 embassy-net = { features = ["defmt", "dhcpv4", "dns", "tcp", "udp"], version = "0.7" }
-embassy-sync = { features = ["defmt"], version = "0.6" }
-embassy-time = { features = ["defmt"], version = "0.4" }
+embassy-time = { features = ["defmt", "defmt-timestamp-uptime"], version = "0.4" }
 embedded-graphics = { features = ["defmt"], version = "0.8" }
 embedded-hal = { version = "0.2.7" }
 # Espressif
 esp-alloc = { features = ["defmt", "nightly"], version = "0.8" }
 esp-backtrace = { features = ["defmt", "esp32c3", "exception-handler", "panic-handler"], version = "0.16" }
+esp-bootloader-esp-idf = { features = ["defmt"], version = "0.1.0" }
 esp-hal = { features = ["defmt", "esp32c3", "unstable"], version = "1.0.0-beta.1" }
 esp-hal-embassy = { features = ["defmt", "esp32c3"], version = "0.8" }
 esp-println = { features = ["defmt-espflash", "esp32c3", "log-04"], version = "0.14" }

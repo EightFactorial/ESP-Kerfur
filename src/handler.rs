@@ -5,12 +5,17 @@ use esp_hal::{Config, clock::CpuClock, peripherals::Peripherals};
 use esp_println::logger::init_logger_from_env;
 use log::info;
 
+// Use `embassy_time` for `defmt` timestamps.
+#[rustfmt::skip]
+use embassy_time as _;
 // Use `esp_backtrace` as the panic handler.
 #[rustfmt::skip]
 use esp_backtrace as _;
 // Use `esp_alloc` as the global allocator.
 #[rustfmt::skip]
 use esp_alloc as _;
+
+esp_bootloader_esp_idf::esp_app_desc!();
 
 // Set the `defmt` panic handler.
 #[defmt::panic_handler]

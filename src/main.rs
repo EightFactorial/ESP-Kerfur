@@ -25,6 +25,6 @@ async fn main(spawner: embassy_executor::Spawner) -> ! {
 
     // Main loop, just run async tasks.
     loop {
-        Timer::after_secs(5).await;
+        Timer::after_secs(10).await;
     }
 }
