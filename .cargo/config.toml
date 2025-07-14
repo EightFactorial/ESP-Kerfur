@@ -1,0 +1,9 @@
+[build]
+rustflags = ["-Clink-arg=-Tdefmt.x", "-Clink-arg=-Tlinkall.x"]
+target = "riscv32imc-unknown-none-elf"
+
+[env]
+ESP_LOG = "info"
+
+[target.riscv32imc-unknown-none-elf]
+runner = "espflash flash --baud 1152000 --monitor"

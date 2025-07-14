@@ -1,0 +1,75 @@
+[package]
+authors = ["EightFactorial"]
+edition = "2024"
+include = ["/src/**", "Cargo.toml"]
+license = "MIT OR Apache-2.0"
+name = "esp-kerfur"
+readme = "README.md"
+rust-version = "1.88.0"
+version = "0.1.0"
+
+[lints.rust]
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+unreachable_pub = "warn"
+unused_import_braces = "warn"
+unused_lifetimes = "warn"
+
+[lints.rustdoc]
+bare_urls = "deny"
+broken_intra_doc_links = "deny"
+invalid_codeblock_attributes = "deny"
+invalid_html_tags = "deny"
+invalid_rust_codeblocks = "deny"
+private_intra_doc_links = "deny"
+
+[lints.clippy]
+cast_possible_truncation = "warn"
+cast_possible_wrap = "warn"
+clone_on_ref_ptr = "warn"
+doc_markdown = "allow"
+missing_docs_in_private_items = "deny"
+missing_errors_doc = "deny"
+missing_panics_doc = "deny"
+module_name_repetitions = "allow"
+needless_pass_by_value = "allow"
+panic = "deny"
+panic_in_result_fn = "deny"
+pedantic = { level = "warn", priority = -1 }
+rest_pat_in_fully_bound_structs = "deny"
+std_instead_of_alloc = "deny"
+std_instead_of_core = "deny"
+unnecessary_cast = "warn"
+unwrap_used = "deny"
+used_underscore_binding = "allow"
+
+[profile.release]
+codegen-units = 1
+incremental = false
+lto = "fat"
+opt-level = "s"
+strip = "debuginfo"
+
+[dependencies]
+# Embassy/Embedded
+embassy-executor = { features = ["defmt", "task-arena-size-81920"], version = "0.7" }
+embassy-net = { features = ["defmt", "dhcpv4", "dns", "tcp", "udp"], version = "0.7" }
+embassy-sync = { features = ["defmt"], version = "0.6" }
+embassy-time = { features = ["defmt"], version = "0.4" }
+embedded-graphics = { features = ["defmt"], version = "0.8" }
+embedded-hal = { version = "0.2.7" }
+# Espressif
+esp-alloc = { features = ["defmt", "nightly"], version = "0.8" }
+esp-backtrace = { features = ["defmt", "esp32c3", "exception-handler", "panic-handler"], version = "0.16" }
+esp-hal = { features = ["defmt", "esp32c3", "unstable"], version = "1.0.0-beta.1" }
+esp-hal-embassy = { features = ["defmt", "esp32c3"], version = "0.8" }
+esp-println = { features = ["defmt-espflash", "esp32c3", "log-04"], version = "0.14" }
+
+# Peripherals
+sh1106 = { version = "0.5" }
+
+# Other
+defmt = { features = ["alloc"], version = "1.0" }
+log = { version = "0.4" }
+static_cell = { features = ["nightly"], version = "2.1" }
+tinybmp = "0.6"
