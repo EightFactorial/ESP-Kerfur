@@ -54,6 +54,7 @@ strip = "debuginfo"
 # Embassy/Embedded
 embassy-executor = { features = ["defmt", "task-arena-size-81920"], version = "0.7" }
 embassy-net = { features = ["defmt", "dhcpv4", "dns", "tcp", "udp"], version = "0.7" }
+embassy-sync = { features = ["defmt"], version = "0.7" }
 embassy-time = { features = ["defmt", "defmt-timestamp-uptime"], version = "0.4" }
 embedded-graphics = { features = ["defmt"], version = "0.8" }
 embedded-hal = { version = "0.2.7" }

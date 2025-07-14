@@ -1,4 +1,6 @@
-//! TODO
+//! The device configuration module.
+//!
+//! Imports required components, calls setup macros, and initializes the device.
 
 use esp_alloc::heap_allocator;
 use esp_hal::{Config, clock::CpuClock, peripherals::Peripherals};

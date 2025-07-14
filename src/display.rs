@@ -1,4 +1,6 @@
-//! TODO
+//! The display module. Contains all logic for managing the display.
+//!
+//! See [`KerfurDisplay::execute`] for the main display logic.
 
 use embassy_executor::Spawner;
 use embassy_time::Timer;
@@ -164,6 +166,9 @@ impl KerfurDisplay {
     }
 
     /// Run the kerfur display loop.
+    ///
+    /// This is the main loop that will run indefinitely.
+    /// Contains all of the logic for what to show on the display.
     async fn execute(&mut self) -> Result<!, DisplayManagerError> {
         // Initialize the display
         self.init()?;
@@ -174,11 +179,11 @@ impl KerfurDisplay {
 
             // Wait before showing the next frame
             {
-                // Have a ~1/32 chance to short blink
+                // Have a ~1/32 chance to quickly show the next frame
                 let delay = self.rng.random();
                 if delay.is_multiple_of(32) {
-                    // Wait between 1.0 (0+1000) and 1.099 (99+1000) seconds before the next frame
-                    Timer::after_millis(u64::from(delay % 100 + 1000)).await;
+                    // Wait between 1.0 (0+1000) and 1.499 (499+1000) seconds before the next frame
+                    Timer::after_millis(u64::from(delay % 500 + 1000)).await;
                 } else {
                     // Wait between 3.0 (0+3000) and 6.999 (3999+3000) seconds before the next frame
                     Timer::after_millis(u64::from(delay % 4000 + 3000)).await;

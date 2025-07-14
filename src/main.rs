@@ -4,6 +4,7 @@
 #![no_std]
 #![no_main]
 
+use embassy_executor::Spawner;
 use embassy_time::Timer;
 use esp_hal::{rng::Rng, timer::timg::TimerGroup};
 
@@ -11,7 +12,7 @@ mod display;
 mod handler;
 
 #[esp_hal_embassy::main]
-async fn main(spawner: embassy_executor::Spawner) -> ! {
+async fn main(spawner: Spawner) -> ! {
     // Initialize the microcontroller.
     let per = handler::init();
     // Initialize the embassy runtime.
@@ -25,6 +26,6 @@ async fn main(spawner: embassy_executor::Spawner) -> ! {
 
     // Main loop, just run async tasks.
     loop {
-        Timer::after_secs(10).await;
+        Timer::after_secs(30).await;
     }
 }
