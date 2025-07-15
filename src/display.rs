@@ -24,6 +24,8 @@ use sh1106::{
 use static_cell::make_static;
 use tinybmp::Bmp;
 
+use crate::clock::Clock;
+
 /// Initialize the display and spawn the display manager task.
 pub(super) fn spawn(
     spawner: Spawner,
@@ -31,6 +33,7 @@ pub(super) fn spawn(
     i2c: impl Into<AnyI2c<'static>>,
     sda: impl Into<AnyPin<'static>>,
     scl: impl Into<AnyPin<'static>>,
+    clock: Clock,
     rng: Rng,
 ) {
     // Create the I2C interface
@@ -44,7 +47,7 @@ pub(super) fn spawn(
     let properties =
         DisplayProperties::new(iface, DisplaySize::Display128x64, DisplayRotation::Rotate180);
     let trigger = Input::new(button.into(), InputConfig::default().with_pull(Pull::Up));
-    let kerfur = KerfurDisplay::new(GraphicsMode::new(properties), trigger, rng);
+    let kerfur = KerfurDisplay::new(GraphicsMode::new(properties), trigger, clock, rng);
 
     // Spawn the display manager task
     spawner.must_spawn(display_manager(kerfur));
@@ -57,11 +60,9 @@ async fn display_manager(mut kerfur: KerfurDisplay) -> ! {
 
     loop {
         // Execute the display loop, which will run until an error occurs.
-        #[expect(clippy::match_single_binding)]
         match kerfur.execute().await {
-            Err(DisplayManagerError::DisplayI2c(err)) => match err {
-                err => error!("Display I2C error: {err:?}"),
-            },
+            Err(DisplayManagerError::ClockError(err)) => error!("Clock error: {err:?}"),
+            Err(DisplayManagerError::DisplayI2c(err)) => error!("Display I2C error: {err:?}"),
         }
 
         // Wait 30 seconds before restarting the display manager
@@ -73,6 +74,8 @@ async fn display_manager(mut kerfur: KerfurDisplay) -> ! {
 /// Errors that can occur in the display manager.
 #[non_exhaustive]
 enum DisplayManagerError {
+    /// An error occurred while retrieving the current time.
+    ClockError(time::Error),
     /// An error occurred while communicating with the display.
     DisplayI2c(I2cError),
 }
@@ -87,6 +90,10 @@ impl From<DisplayError<I2cError, ()>> for DisplayManagerError {
             DisplayError::Pin(()) => unreachable!(),
         }
     }
+}
+
+impl From<time::Error> for DisplayManagerError {
+    fn from(err: time::Error) -> Self { DisplayManagerError::ClockError(err) }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -106,6 +113,8 @@ struct KerfurDisplay {
 
     /// A source of random numbers for timing.
     rng: Rng,
+    /// A clock used to track the current time.
+    clock: Clock,
 }
 
 /// A face that Kerfur can display.
@@ -116,6 +125,8 @@ enum KerfurFace {
     Blink,
     /// The meow face, displayed when the Kerfur meows.
     Meow,
+    /// The clock face, displayed when showing the time.
+    Clock,
 }
 
 /// An action that Kerfur can perform.
@@ -124,6 +135,8 @@ enum KerfurAction {
     Blink,
     /// Perform a meow.
     Meow,
+    /// Show the time.
+    Time,
 }
 
 impl KerfurDisplay {
@@ -133,7 +146,12 @@ impl KerfurDisplay {
     /// Only one display can ever exist.
     /// Calling this function twice will immediately panic.
     #[must_use]
-    fn new(display: DisplayInterface<'static>, trigger: Input<'static>, rng: Rng) -> Self {
+    fn new(
+        display: DisplayInterface<'static>,
+        trigger: Input<'static>,
+        clock: Clock,
+        rng: Rng,
+    ) -> Self {
         // Create static images for the frames
         let neutral = make_static!(
             Bmp::from_slice(include_bytes!("../assets/kerfur_neutral.bmp"))
@@ -154,6 +172,7 @@ impl KerfurDisplay {
             neutral: Image::new(neutral, Point::zero()),
             blink: Image::new(blink, Point::zero()),
             meow: Image::new(meow, Point::zero()),
+            clock,
             rng,
         }
     }
@@ -164,6 +183,10 @@ impl KerfurDisplay {
             KerfurFace::Neutral => self.neutral.draw(&mut self.display).unwrap(),
             KerfurFace::Blink => self.blink.draw(&mut self.display).unwrap(),
             KerfurFace::Meow => self.meow.draw(&mut self.display).unwrap(),
+            KerfurFace::Clock => {
+                // TODO: Implement the clock face
+                let _time = self.clock.now()?;
+            }
         }
         self.display.flush()?;
         Ok(())
@@ -208,11 +231,23 @@ impl KerfurDisplay {
                 },
                 // Wait for a button press to meow
                 async {
-                    // This is described as "not cancellation-safe" in the docs,
-                    // but the sentence before it seems to imply that it is?
-                    self.trigger.wait_for_falling_edge().await;
+                    // `Input::wait_for` is described as "not cancellation-safe"
+                    // in the docs, but the sentence before it seems to imply that it is?
+                    self.trigger.wait_for_low().await;
 
-                    KerfurAction::Meow
+                    future::or::<KerfurAction, _, _>(
+                        // If the button is held, show the clock face
+                        async {
+                            Timer::after_millis(2000).await;
+                            KerfurAction::Time
+                        },
+                        // If the button is released, meow
+                        async {
+                            self.trigger.wait_for_high().await;
+                            KerfurAction::Meow
+                        },
+                    )
+                    .await
                 },
             )
             .await
@@ -226,6 +261,11 @@ impl KerfurDisplay {
                 KerfurAction::Meow => {
                     self.display_face(KerfurFace::Meow)?;
                     Timer::after_millis(500).await;
+                }
+                // Show the clock face
+                KerfurAction::Time => {
+                    self.display_face(KerfurFace::Clock)?;
+                    Timer::after_millis(5000).await;
                 }
             }
         }

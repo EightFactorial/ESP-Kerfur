@@ -53,7 +53,7 @@ strip = "debuginfo"
 [dependencies]
 # Embassy/Embedded
 embassy-executor = { features = ["defmt", "task-arena-size-81920"], version = "0.7" }
-embassy-net = { features = ["defmt", "dhcpv4", "dns", "tcp", "udp"], version = "0.7" }
+embassy-net = { features = ["defmt", "dhcpv4", "dns", "proto-ipv4", "udp"], version = "0.7" }
 embassy-sync = { features = ["defmt"], version = "0.7" }
 embassy-time = { features = ["defmt", "defmt-timestamp-uptime"], version = "0.4" }
 embedded-graphics = { features = ["defmt"], version = "0.8" }
@@ -65,6 +65,7 @@ esp-bootloader-esp-idf = { features = ["defmt"], version = "0.1.0" }
 esp-hal = { features = ["defmt", "esp32c3", "unstable"], version = "1.0.0-beta.1" }
 esp-hal-embassy = { features = ["defmt", "esp32c3"], version = "0.8" }
 esp-println = { features = ["defmt-espflash", "esp32c3", "log-04"], version = "0.14" }
+esp-wifi = { features = ["defmt", "esp-alloc", "esp32c3", "wifi"], version = "0.14" }
 
 # Peripherals
 sh1106 = { version = "0.5" }
@@ -73,5 +74,7 @@ sh1106 = { version = "0.5" }
 defmt = { features = ["alloc"], version = "1.0" }
 futures-lite = { default-features = false, features = ["alloc"], version = "2.6" }
 log = { version = "0.4" }
+sntpc = { default-features = false, features = ["defmt", "embassy-socket"], version = "0.5" }
 static_cell = { features = ["nightly"], version = "2.1" }
+time = { default-features = false, version = "0.3" }
 tinybmp = "0.6"
