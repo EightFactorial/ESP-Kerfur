@@ -22,7 +22,7 @@ async fn main(spawner: Spawner) -> ! {
     let rng = Rng::new(per.RNG);
 
     // Spawn the display task.
-    display::spawn(spawner, rng, per.I2C0, per.GPIO3, per.GPIO4);
+    display::spawn(spawner, per.GPIO5, per.I2C0, per.GPIO3, per.GPIO4, rng);
 
     // Main loop, just run async tasks.
     loop {

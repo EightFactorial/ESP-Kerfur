@@ -7,7 +7,7 @@ use embassy_time::Timer;
 use embedded_graphics::{image::Image, pixelcolor::BinaryColor, prelude::*};
 use esp_hal::{
     Blocking, DriverMode,
-    gpio::AnyPin,
+    gpio::{AnyPin, Input, InputConfig, Pull},
     i2c::{
         AnyI2c,
         master::{Config, Error as I2cError, I2c},
@@ -15,6 +15,7 @@ use esp_hal::{
     rng::Rng,
     time::Rate,
 };
+use futures_lite::future;
 use log::{error, info, warn};
 use sh1106::{
     Error as DisplayError, mode::displaymode::DisplayModeTrait, prelude::*,
@@ -26,10 +27,11 @@ use tinybmp::Bmp;
 /// Initialize the display and spawn the display manager task.
 pub(super) fn spawn(
     spawner: Spawner,
-    rng: Rng,
+    button: impl Into<AnyPin<'static>>,
     i2c: impl Into<AnyI2c<'static>>,
     sda: impl Into<AnyPin<'static>>,
     scl: impl Into<AnyPin<'static>>,
+    rng: Rng,
 ) {
     // Create the I2C interface
     let config = Config::default().with_frequency(Rate::from_khz(400));
@@ -41,7 +43,8 @@ pub(super) fn spawn(
     // Create the kerfur display
     let properties =
         DisplayProperties::new(iface, DisplaySize::Display128x64, DisplayRotation::Rotate180);
-    let kerfur = KerfurDisplay::new(GraphicsMode::new(properties), rng);
+    let trigger = Input::new(button.into(), InputConfig::default().with_pull(Pull::Up));
+    let kerfur = KerfurDisplay::new(GraphicsMode::new(properties), trigger, rng);
 
     // Spawn the display manager task
     spawner.must_spawn(display_manager(kerfur));
@@ -93,6 +96,8 @@ impl From<DisplayError<I2cError, ()>> for DisplayManagerError {
 struct KerfurDisplay {
     /// The display to draw to.
     display: DisplayInterface<'static>,
+    /// The input that triggers a meow.
+    trigger: Input<'static>,
 
     /// Images to be drawn on the display.
     neutral: Image<'static, Bmp<'static, BinaryColor>>,
@@ -103,13 +108,21 @@ struct KerfurDisplay {
     rng: Rng,
 }
 
-/// A face that the Kerfur can display.
+/// A face that Kerfur can display.
 enum KerfurFace {
     /// The neutral face, displayed most of the time.
     Neutral,
     /// The neutral face with eyes closed, displayed when blinking.
     Blink,
     /// The meow face, displayed when the Kerfur meows.
+    Meow,
+}
+
+/// An action that Kerfur can perform.
+enum KerfurAction {
+    /// Perform a blink.
+    Blink,
+    /// Perform a meow.
     Meow,
 }
 
@@ -120,7 +133,7 @@ impl KerfurDisplay {
     /// Only one display can ever exist.
     /// Calling this function twice will immediately panic.
     #[must_use]
-    fn new(display: DisplayInterface<'static>, rng: Rng) -> Self {
+    fn new(display: DisplayInterface<'static>, trigger: Input<'static>, rng: Rng) -> Self {
         // Create static images for the frames
         let neutral = make_static!(
             Bmp::from_slice(include_bytes!("../assets/kerfur_neutral.bmp"))
@@ -137,6 +150,7 @@ impl KerfurDisplay {
 
         Self {
             display,
+            trigger,
             neutral: Image::new(neutral, Point::zero()),
             blink: Image::new(blink, Point::zero()),
             meow: Image::new(meow, Point::zero()),
@@ -177,30 +191,41 @@ impl KerfurDisplay {
             // Display the neutral frame
             self.display_face(KerfurFace::Neutral)?;
 
-            // Wait before showing the next frame
-            {
-                // Have a ~1/32 chance to quickly show the next frame
-                let delay = self.rng.random();
-                if delay.is_multiple_of(32) {
-                    // Wait between 1.0 (0+1000) and 1.499 (499+1000) seconds before the next frame
-                    Timer::after_millis(u64::from(delay % 500 + 1000)).await;
-                } else {
-                    // Wait between 3.0 (0+3000) and 6.999 (3999+3000) seconds before the next frame
-                    Timer::after_millis(u64::from(delay % 4000 + 3000)).await;
-                }
-            }
+            match future::or::<KerfurAction, _, _>(
+                // Wait an amount of time before blinking
+                async {
+                    // Have a ~1/32 chance to quickly show the next frame
+                    let delay = self.rng.random();
+                    if delay.is_multiple_of(32) {
+                        // Wait between 1.0 (0+1000) and 1.499 (499+1000) seconds
+                        Timer::after_millis(u64::from(delay % 500 + 1000)).await;
+                    } else {
+                        // Wait between 3.0 (0+3000) and 6.999 (3999+3000) seconds
+                        Timer::after_millis(u64::from(delay % 4000 + 3000)).await;
+                    }
 
-            // Show the blink or meow frame
+                    KerfurAction::Blink
+                },
+                // Wait for a button press to meow
+                async {
+                    // This is described as "not cancellation-safe" in the docs,
+                    // but the sentence before it seems to imply that it is?
+                    self.trigger.wait_for_falling_edge().await;
+
+                    KerfurAction::Meow
+                },
+            )
+            .await
             {
-                // Have a ~1/16 chance to meow instead of blink
-                if self.rng.random().is_multiple_of(16) {
-                    // Display the meow frame
-                    self.display_face(KerfurFace::Meow)?;
-                    Timer::after_millis(500).await;
-                } else {
-                    // Display the blink frame
+                // Show the blink frame
+                KerfurAction::Blink => {
                     self.display_face(KerfurFace::Blink)?;
                     Timer::after_millis(100).await;
+                }
+                // Show the meow frame
+                KerfurAction::Meow => {
+                    self.display_face(KerfurFace::Meow)?;
+                    Timer::after_millis(500).await;
                 }
             }
         }

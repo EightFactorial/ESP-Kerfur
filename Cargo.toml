@@ -71,6 +71,7 @@ sh1106 = { version = "0.5" }
 
 # Other
 defmt = { features = ["alloc"], version = "1.0" }
+futures-lite = { default-features = false, features = ["alloc"], version = "2.6" }
 log = { version = "0.4" }
 static_cell = { features = ["nightly"], version = "2.1" }
 tinybmp = "0.6"
