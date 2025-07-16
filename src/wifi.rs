@@ -4,11 +4,7 @@ use embassy_executor::Spawner;
 use embassy_net::{Config, DhcpConfig, Runner, Stack, StackResources};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
 use embassy_time::{Instant, Timer};
-use esp_hal::{
-    peripherals::{RADIO_CLK, WIFI},
-    rng::Rng,
-    timer::timg::Timer as TimgTimer,
-};
+use esp_hal::{peripherals::WIFI, rng::Rng, timer::timg::Timer as TimgTimer};
 use esp_wifi::{
     config::PowerSaveMode,
     wifi::{
@@ -45,13 +41,11 @@ impl WiFiStack {
         spawner: Spawner,
         timer: TimgTimer<'static>,
         wifi: WIFI<'static>,
-        radio_clock: RADIO_CLK<'static>,
         mut rng: Rng,
     ) -> Result<Self, WifiError> {
         // Initialize the WiFi radio.
-        let controller = make_static!(
-            esp_wifi::init(timer, rng, radio_clock).expect("Failed to initialize `esp_wifi`?")
-        );
+        let controller =
+            make_static!(esp_wifi::init(timer, rng).expect("Failed to initialize `esp_wifi`?"));
 
         // Initialize the WiFi controller and interfaces.
         let (mut controller, interfaces) = match esp_wifi::wifi::new(controller, wifi) {
@@ -94,14 +88,17 @@ impl WiFiStack {
 
 // -------------------------------------------------------------------------------------------------
 
+/// A [`Signal`] to stop the network task.
+static STOP_NETWORK_SIGNAL: Signal<CriticalSectionRawMutex, ()> = Signal::new();
+
 #[embassy_executor::task]
 async fn network_task(runner: &'static mut Runner<'static, WifiDevice<'static>>) {
     info!("Starting network background task");
-    future::or(async { runner.run().await }, STOP_WIFI_SIGNAL.wait()).await;
+    future::or(async { runner.run().await }, STOP_NETWORK_SIGNAL.wait()).await;
     info!("Stopping network background task");
 }
 
-/// A [`Signal`] to stop the WiFi connection task.
+/// A [`Signal`] to stop the connection task.
 pub(super) static STOP_WIFI_SIGNAL: Signal<CriticalSectionRawMutex, ()> = Signal::new();
 
 #[embassy_executor::task]
@@ -173,8 +170,15 @@ async fn connection_task(controller: &'static mut WifiController<'static>) {
             Ok(()) => {
                 info!("Connected to WiFi network");
                 STOP_WIFI_SIGNAL.wait().await;
+
                 info!("Disconnecting from WiFi network");
+                if let Err(err) = controller.disconnect_async().await {
+                    error!("Failed to disconnect from WiFi network: {err:?}");
+                }
+
                 info!("Stopping WiFi background task");
+                STOP_NETWORK_SIGNAL.signal(());
+
                 return;
             }
             Err(err) => {

@@ -14,10 +14,7 @@ use embedded_graphics::{
 use esp_hal::{
     Blocking, DriverMode,
     gpio::{AnyPin, Input, InputConfig, Pull},
-    i2c::{
-        AnyI2c,
-        master::{Config, Error as I2cError, I2c},
-    },
+    i2c::master::{AnyI2c, Config, Error as I2cError, I2c},
     rng::Rng,
     time::Rate,
 };

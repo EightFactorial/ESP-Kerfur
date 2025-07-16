@@ -29,6 +29,9 @@ fn panic() -> ! { core::panic!("panic via `defmt::panic!`") }
 #[cfg(not(any(feature = "esp32c3", feature = "esp32c6")))]
 compile_error!("Either the `esp32c3` or `esp32c6` feature must be enabled.");
 
+#[cfg(all(feature = "esp32c3", feature = "esp32c6"))]
+compile_error!("Only one of the `esp32c3` or `esp32c6` features can be enabled.");
+
 /// Initialize the device.
 pub(super) fn init() -> Peripherals {
     // Initialize the logger

@@ -54,18 +54,18 @@ strip = "debuginfo"
 # Embassy/Embedded
 embassy-executor = { features = ["defmt", "task-arena-size-81920"], version = "0.7" }
 embassy-net = { features = ["defmt", "dhcpv4", "dns", "proto-ipv4", "udp"], version = "0.7" }
-embassy-sync = { features = ["defmt"], version = "0.7" }
+embassy-sync = { features = ["defmt"], version = "0.6" }
 embassy-time = { features = ["defmt", "defmt-timestamp-uptime-ms"], version = "0.4" }
 embedded-graphics = { features = ["defmt"], version = "0.8" }
 embedded-hal = { version = "0.2.7" }
 # Espressif
 esp-alloc = { features = ["nightly"], version = "0.8" }
-esp-backtrace = { features = ["exception-handler", "panic-handler", "println"], version = "0.16" }
-esp-bootloader-esp-idf = { features = ["log"], version = "0.1.0" }
-esp-hal = { features = ["unstable"], version = "1.0.0-beta.1" }
-esp-hal-embassy = { version = "0.8" }
-esp-println = { features = ["defmt-espflash", "log-04"], version = "0.14" }
-esp-wifi = { features = ["builtin-scheduler", "wifi"], version = "0.14" }
+esp-backtrace = { features = ["exception-handler", "panic-handler", "println"], version = "0.17" }
+esp-bootloader-esp-idf = { features = ["esp-rom-sys", "log-04"], version = "0.2.0" }
+esp-hal = { features = ["unstable"], version = "1.0.0-rc.0" }
+esp-hal-embassy = { version = "0.9" }
+esp-println = { features = ["defmt-espflash", "log-04"], version = "0.15" }
+esp-wifi = { features = ["builtin-scheduler", "wifi"], version = "0.15" }
 
 # Peripherals
 sh1106 = { version = "0.5" }
@@ -83,12 +83,13 @@ tinybmp = "0.6"
 [features]
 default = []
 
-debug = ["esp-wifi/log-04", "esp-wifi/sys-logs"]
+debug = ["esp-alloc/defmt", "esp-wifi/log-04", "esp-wifi/sys-logs"]
 
 # Configure dependencies for ESP32-S2
-# Note: Remember to change the `target` in `.cargo/config.toml`
+# Note: Remember to change the target in `.cargo/config.toml`
 esp32c3 = [
   "esp-backtrace/esp32c3",
+  "esp-bootloader-esp-idf/esp32c3",
   "esp-hal-embassy/esp32c3",
   "esp-hal/esp32c3",
   "esp-println/esp32c3",
@@ -96,9 +97,10 @@ esp32c3 = [
 ]
 
 # Configure dependencies for ESP32-C6
-# Note: Remember to change the `target` in `.cargo/config.toml`
+# Note: Remember to change the target in `.cargo/config.toml`
 esp32c6 = [
   "esp-backtrace/esp32c6",
+  "esp-bootloader-esp-idf/esp32c6",
   "esp-hal-embassy/esp32c6",
   "esp-hal/esp32c6",
   "esp-println/esp32c6",

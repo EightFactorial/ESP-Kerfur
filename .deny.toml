@@ -5,7 +5,7 @@ ignore = ["RUSTSEC-2024-0436"]
 version = 2
 
 [licenses]
-allow = ["0BSD", "Apache-2.0", "ISC", "MIT", "Unicode-3.0"]
+allow = ["0BSD", "AGPL-3.0", "Apache-2.0", "BSD-3-Clause", "ISC", "MIT", "Unicode-3.0"]
 
 [sources]
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
@@ -18,3 +18,25 @@ highlight = "all"
 multiple-versions = "deny"
 wildcards = "deny"
 workspace-default-features = "allow"
+
+# --- Exceptions for specific crates ---
+
+[[bans.skip]]
+name = "bitflags"
+version = "=1.3.2"
+
+[[bans.skip]]
+name = "defmt"
+version = "=0.3.100"
+
+[[bans.skip]]
+name = "embedded-hal"
+version = "=0.2.7"
+
+[[bans.skip]]
+name = "nb"
+version = "=0.1.3"
+
+[[bans.skip]]
+name = "rand_core"
+version = "=0.6.4"

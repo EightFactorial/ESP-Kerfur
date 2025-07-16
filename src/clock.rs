@@ -7,13 +7,9 @@ use embassy_net::{
     dns::DnsQueryType,
     udp::{PacketMetadata, UdpSocket},
 };
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, rwlock::RwLock};
-use embassy_time::{Instant, Timer};
-use esp_hal::{
-    peripherals::{RADIO_CLK, WIFI},
-    rng::Rng,
-    timer::timg::Timer as TimgTimer,
-};
+use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
+use embassy_time::Instant;
+use esp_hal::{peripherals::WIFI, rng::Rng, timer::timg::Timer as TimgTimer};
 use log::{error, info};
 use sntpc::NtpContext;
 use static_cell::make_static;
@@ -26,12 +22,11 @@ pub(super) fn spawn(
     spawner: Spawner,
     timer: TimgTimer<'static>,
     wifi: WIFI<'static>,
-    radio_clock: RADIO_CLK<'static>,
     clock: Clock,
     rng: Rng,
 ) {
     // Spawn the clock synchronization task.
-    spawner.must_spawn(clock_synchronization(spawner, timer, wifi, radio_clock, clock, rng));
+    spawner.must_spawn(clock_synchronization(spawner, timer, wifi, clock, rng));
 }
 
 #[embassy_executor::task]
@@ -39,25 +34,22 @@ async fn clock_synchronization(
     spawner: Spawner,
     timer: TimgTimer<'static>,
     wifi: WIFI<'static>,
-    radio_clock: RADIO_CLK<'static>,
     clock: Clock,
     rng: Rng,
 ) {
     info!("Starting clock synchronization");
-    if let Ok(wifi) = WiFiStack::new(spawner, timer, wifi, radio_clock, rng).await {
+    if let Ok(wifi) = WiFiStack::new(spawner, timer, wifi, rng).await {
         clock.sync(&wifi).await;
     }
-    STOP_WIFI_SIGNAL.signal(());
-    Timer::after_millis(500).await;
-    STOP_WIFI_SIGNAL.signal(());
     info!("Clock synchronization completed");
+    STOP_WIFI_SIGNAL.signal(());
 }
 
 // -------------------------------------------------------------------------------------------------
 
 /// A clock that provides the current time and timezone.
 #[derive(Clone, Copy)]
-pub(super) struct Clock(&'static RwLock<CriticalSectionRawMutex, ClockInner>);
+pub(super) struct Clock(&'static Mutex<NoopRawMutex, ClockInner>);
 
 /// The inner data of a [`Clock`].
 #[derive(Clone, Copy)]
@@ -91,16 +83,12 @@ impl Clock {
     /// # Panics
     /// Only one clock can ever exist.
     /// Calling this function twice will immediately panic.
-    pub(super) fn new() -> Self {
-        Self(make_static!(
-            RwLock::<CriticalSectionRawMutex, ClockInner>::new(ClockInner::default())
-        ))
-    }
+    pub(super) fn new() -> Self { Self(make_static!(Mutex::new(ClockInner::default()))) }
 
     /// Get the current time.
     #[expect(clippy::cast_possible_wrap)]
     pub(super) async fn now(&self) -> Option<OffsetDateTime> {
-        let inner = *self.0.read().await;
+        let inner = *self.0.lock().await;
         let epoch = Instant::now().as_secs() + inner.boot_timestamp;
         let utc = OffsetDateTime::from_unix_timestamp(epoch as i64).ok()?;
         utc.checked_to_offset(inner.timezone_offset)
@@ -157,7 +145,7 @@ impl Clock {
                 return;
             }
         };
-        self.0.write().await.boot_timestamp =
+        self.0.lock().await.boot_timestamp =
             u64::from(ntp_result.sec()).saturating_sub(Instant::now().as_secs());
 
         // TODO: Clean this up
@@ -165,7 +153,7 @@ impl Clock {
             // Adjust the timezone for daylight saving time if enabled.
             if Self::DAYLIGHT_SAVING_TIME {
                 let description = format_description!("[year]-[month]-[day]");
-                let mut inner = self.0.write().await;
+                let mut inner = self.0.lock().await;
 
                 if let Some(start) = Date::parse(env!("DST_RANGE_START"), description)
                     .ok()

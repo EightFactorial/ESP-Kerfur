@@ -31,12 +31,12 @@ async fn main(spawner: Spawner) -> ! {
     let clock = Clock::new();
 
     // Spawn the clock synchronization task.
-    clock::spawn(spawner, TimerGroup::new(per.TIMG1).timer0, per.WIFI, per.RADIO_CLK, clock, rng);
+    clock::spawn(spawner, TimerGroup::new(per.TIMG1).timer0, per.WIFI, clock, rng);
     // Spawn the display task.
     display::spawn(spawner, per.GPIO5, per.I2C0, per.GPIO3, per.GPIO4, clock, rng);
 
     // Main loop, just run async tasks.
     loop {
-        Timer::after_secs(15).await;
+        Timer::after_secs(30).await;
     }
 }
