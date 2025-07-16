@@ -26,6 +26,9 @@ fn panic() -> ! { core::panic!("panic via `defmt::panic!`") }
 
 // -------------------------------------------------------------------------------------------------
 
+#[cfg(not(any(feature = "esp32c3", feature = "esp32c6")))]
+compile_error!("Either the `esp32c3` or `esp32c6` feature must be enabled.");
+
 /// Initialize the device.
 pub(super) fn init() -> Peripherals {
     // Initialize the logger
@@ -37,5 +40,5 @@ pub(super) fn init() -> Peripherals {
     info!("Initialized the heap");
 
     // Initialize the microcontroller
-    esp_hal::init(Config::default().with_cpu_clock(CpuClock::_80MHz))
+    esp_hal::init(Config::default().with_cpu_clock(CpuClock::_160MHz))
 }

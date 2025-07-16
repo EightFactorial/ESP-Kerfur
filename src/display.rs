@@ -4,7 +4,13 @@
 
 use embassy_executor::Spawner;
 use embassy_time::Timer;
-use embedded_graphics::{image::Image, pixelcolor::BinaryColor, prelude::*};
+use embedded_graphics::{
+    image::Image,
+    mono_font::{MonoTextStyle, MonoTextStyleBuilder, ascii::FONT_10X20},
+    pixelcolor::BinaryColor,
+    prelude::*,
+    text::{Baseline, Text},
+};
 use esp_hal::{
     Blocking, DriverMode,
     gpio::{AnyPin, Input, InputConfig, Pull},
@@ -46,7 +52,7 @@ pub(super) fn spawn(
     // Create the kerfur display
     let properties =
         DisplayProperties::new(iface, DisplaySize::Display128x64, DisplayRotation::Rotate180);
-    let trigger = Input::new(button.into(), InputConfig::default().with_pull(Pull::Up));
+    let trigger = Input::new(button.into(), InputConfig::default().with_pull(Pull::Down));
     let kerfur = KerfurDisplay::new(GraphicsMode::new(properties), trigger, clock, rng);
 
     // Spawn the display manager task
@@ -111,10 +117,13 @@ struct KerfurDisplay {
     blink: Image<'static, Bmp<'static, BinaryColor>>,
     meow: Image<'static, Bmp<'static, BinaryColor>>,
 
-    /// A source of random numbers for timing.
-    rng: Rng,
     /// A clock used to track the current time.
     clock: Clock,
+    /// A font used to display the time.
+    font: MonoTextStyle<'static, BinaryColor>,
+
+    /// A source of random numbers for timing.
+    rng: Rng,
 }
 
 /// A face that Kerfur can display.
@@ -172,20 +181,41 @@ impl KerfurDisplay {
             neutral: Image::new(neutral, Point::zero()),
             blink: Image::new(blink, Point::zero()),
             meow: Image::new(meow, Point::zero()),
+            font: MonoTextStyleBuilder::new().font(&FONT_10X20).text_color(BinaryColor::On).build(),
             clock,
             rng,
         }
     }
 
     /// Display a [`KerfurFace`] on the display.
-    fn display_face(&mut self, face: KerfurFace) -> Result<(), DisplayManagerError> {
+    async fn display_face(&mut self, face: KerfurFace) -> Result<(), DisplayManagerError> {
         match face {
             KerfurFace::Neutral => self.neutral.draw(&mut self.display).unwrap(),
             KerfurFace::Blink => self.blink.draw(&mut self.display).unwrap(),
             KerfurFace::Meow => self.meow.draw(&mut self.display).unwrap(),
             KerfurFace::Clock => {
-                // TODO: Implement the clock face
-                let _time = self.clock.now()?;
+                if let Some(date_time) = self.clock.now().await {
+                    self.display.clear();
+
+                    // Draw the time
+                    let time = date_time.time();
+                    let time_str = alloc::format!("{:02}:{:02}", time.hour(), time.minute());
+                    Text::with_baseline(&time_str, Point::new(40, 20), self.font, Baseline::Top)
+                        .draw(&mut self.display)
+                        .unwrap();
+
+                    // Draw the date
+                    let date = date_time.date();
+                    let date_str = alloc::format!(
+                        "{:02}/{:02}/{:04}",
+                        u8::from(date.month()),
+                        date.day(),
+                        date.year()
+                    );
+                    Text::with_baseline(&date_str, Point::new(10, 35), self.font, Baseline::Top)
+                        .draw(&mut self.display)
+                        .unwrap();
+                }
             }
         }
         self.display.flush()?;
@@ -212,7 +242,7 @@ impl KerfurDisplay {
 
         loop {
             // Display the neutral frame
-            self.display_face(KerfurFace::Neutral)?;
+            self.display_face(KerfurFace::Neutral).await?;
 
             match future::or::<KerfurAction, _, _>(
                 // Wait an amount of time before blinking
@@ -233,7 +263,7 @@ impl KerfurDisplay {
                 async {
                     // `Input::wait_for` is described as "not cancellation-safe"
                     // in the docs, but the sentence before it seems to imply that it is?
-                    self.trigger.wait_for_low().await;
+                    self.trigger.wait_for_high().await;
 
                     future::or::<KerfurAction, _, _>(
                         // If the button is held, show the clock face
@@ -243,7 +273,7 @@ impl KerfurDisplay {
                         },
                         // If the button is released, meow
                         async {
-                            self.trigger.wait_for_high().await;
+                            self.trigger.wait_for_low().await;
                             KerfurAction::Meow
                         },
                     )
@@ -254,17 +284,17 @@ impl KerfurDisplay {
             {
                 // Show the blink frame
                 KerfurAction::Blink => {
-                    self.display_face(KerfurFace::Blink)?;
+                    self.display_face(KerfurFace::Blink).await?;
                     Timer::after_millis(100).await;
                 }
                 // Show the meow frame
                 KerfurAction::Meow => {
-                    self.display_face(KerfurFace::Meow)?;
+                    self.display_face(KerfurFace::Meow).await?;
                     Timer::after_millis(500).await;
                 }
                 // Show the clock face
                 KerfurAction::Time => {
-                    self.display_face(KerfurFace::Clock)?;
+                    self.display_face(KerfurFace::Clock).await?;
                     Timer::after_millis(5000).await;
                 }
             }

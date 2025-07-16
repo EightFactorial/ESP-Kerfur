@@ -1,9 +1,24 @@
 [build]
-rustflags = ["-Clink-arg=-Tdefmt.x", "-Clink-arg=-Tlinkall.x"]
+rustflags = ["-Cforce-frame-pointers", "-Clink-arg=-Tdefmt.x", "-Clink-arg=-Tlinkall.x"]
+# Uncomment to build for ESP32-C3
 target = "riscv32imc-unknown-none-elf"
+# Uncomment to build for ESP32-C6
+# target = "riscv32imac-unknown-none-elf"
 
 [env]
 ESP_LOG = "info"
+# Defaults to "CN"
+ESP_WIFI_CONFIG_COUNTRY_CODE = "US"
+# 0 = "Fast Scan", 1 = "All Channels"
+ESP_WIFI_CONFIG_SCAN_METHOD = "0"
+
+# The starting date for Daylight Saving Time (DST)
+DST_RANGE_START = "2025-03-09"
+# The ending date for Daylight Saving Time (DST)
+DST_RANGE_END = "2025-11-02"
 
 [target.riscv32imc-unknown-none-elf]
+runner = "espflash flash --baud 1152000 --monitor"
+
+[target.riscv32imac-unknown-none-elf]
 runner = "espflash flash --baud 1152000 --monitor"
