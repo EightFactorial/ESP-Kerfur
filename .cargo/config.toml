@@ -12,9 +12,21 @@ ESP_WIFI_CONFIG_COUNTRY_CODE = "US"
 # 0 = "Fast Scan", 1 = "All Channels"
 ESP_WIFI_CONFIG_SCAN_METHOD = "0"
 
-# The starting date for Daylight Saving Time (DST)
+# The password for the Wi-Fi network
+WIFI_PASSWORD = "hunter2"
+# The SSID of the Wi-Fi network to connect to
+WIFI_SSID = "HomeNetwork"
+
+# The NTP server to use for time synchronization
+NTP_SERVER = "pool.ntp.org"
+# The timezone offset from UTC
+TIMEZONE_OFFSET = "-08:00" # Pacific Standard Time (PST)
+
+# Uncomment to enable Daylight Saving Time (DST)
+DST_ENABLE = "1"
+# The starting date for Daylight Saving Time
 DST_RANGE_START = "2025-03-09"
-# The ending date for Daylight Saving Time (DST)
+# The ending date for Daylight Saving Time
 DST_RANGE_END = "2025-11-02"
 
 [target.riscv32imc-unknown-none-elf]

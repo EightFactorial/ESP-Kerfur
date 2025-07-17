@@ -69,10 +69,7 @@ impl Clock {
     /// The NTP server to use for time synchronization.
     ///
     /// If none is provided `pool.ntp.org` is used by default.
-    const NTP_SERVER: &str = match option_env!("NTP_SERVER") {
-        Some(server) => server,
-        None => "pool.ntp.org",
-    };
+    const NTP_SERVER: &str = env!("NTP_SERVER");
     /// The provided timezone offset.
     ///
     /// If none is provided it is assumed to be UTC.

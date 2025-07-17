@@ -103,7 +103,7 @@ pub(super) static STOP_WIFI_SIGNAL: Signal<CriticalSectionRawMutex, ()> = Signal
 
 #[embassy_executor::task]
 async fn connection_task(controller: &'static mut WifiController<'static>) {
-    #[cfg(feature = "debug")]
+    #[cfg(feature = "logging")]
     esp_wifi::wifi_set_log_verbose();
 
     info!("Starting WiFi background task");

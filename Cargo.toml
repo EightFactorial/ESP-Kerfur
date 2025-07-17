@@ -52,38 +52,40 @@ strip = "debuginfo"
 
 [dependencies]
 # Embassy/Embedded
+embassy-embedded-hal = { features = ["defmt"], version = "=0.3.0" }
 embassy-executor = { features = ["defmt", "task-arena-size-81920"], version = "0.7" }
 embassy-net = { features = ["defmt", "dhcpv4", "dns", "proto-ipv4", "udp"], version = "0.7" }
-embassy-sync = { features = ["defmt"], version = "0.6" }
+embassy-sync = { features = ["defmt"], version = "=0.6.2" }
 embassy-time = { features = ["defmt", "defmt-timestamp-uptime-ms"], version = "0.4" }
 embedded-graphics = { features = ["defmt"], version = "0.8" }
-embedded-hal = { version = "0.2.7" }
+embedded-hal = { version = "=0.2.7" }
 # Espressif
 esp-alloc = { features = ["nightly"], version = "0.8" }
 esp-backtrace = { features = ["exception-handler", "panic-handler", "println"], version = "0.17" }
-esp-bootloader-esp-idf = { features = ["esp-rom-sys", "log-04"], version = "0.2.0" }
+esp-bootloader-esp-idf = { features = ["esp-rom-sys", "log-04"], version = "0.2" }
 esp-hal = { features = ["unstable"], version = "1.0.0-rc.0" }
 esp-hal-embassy = { version = "0.9" }
 esp-println = { features = ["defmt-espflash", "log-04"], version = "0.15" }
 esp-wifi = { features = ["builtin-scheduler", "wifi"], version = "0.15" }
 
 # Peripherals
-sh1106 = { version = "0.5" }
+sh1106 = { features = ["graphics"], version = "0.5" }
 
 # Other
 defmt = { features = ["alloc", "ip_in_core"], version = "1.0" }
 futures-lite = { default-features = false, features = ["alloc"], version = "2.6" }
 heapless = { features = ["defmt-03"], version = "0.8" }
-log = { version = "0.4" }
+log = { features = ["max_level_debug"], version = "0.4" }
 sntpc = { default-features = false, features = ["embassy-socket", "log"], version = "0.5" }
 static_cell = { features = ["nightly"], version = "2.1" }
-time = { default-features = false, features = ["macros", "parsing"], version = "0.3" }
+time = { default-features = false, features = ["alloc", "macros", "parsing"], version = "0.3" }
 tinybmp = "0.6"
 
 [features]
-default = []
+default = ["release"]
 
-debug = ["esp-alloc/defmt", "esp-wifi/log-04", "esp-wifi/sys-logs"]
+logging = ["esp-alloc/defmt", "esp-hal/log-04", "esp-wifi/log-04", "esp-wifi/sys-logs"]
+release = ["log/release_max_level_info"]
 
 # Configure dependencies for ESP32-S2
 # Note: Remember to change the target in `.cargo/config.toml`
