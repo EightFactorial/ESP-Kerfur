@@ -72,13 +72,14 @@ esp-wifi = { features = ["builtin-scheduler", "wifi"], version = "0.15" }
 sh1106 = { features = ["graphics"], version = "0.5" }
 
 # Other
+chrono = { default-features = false, features = ["alloc"], version = "0.4" }
+chrono-tz = { default-features = false, version = "0.10" }
 defmt = { features = ["alloc", "ip_in_core"], version = "1.0" }
 futures-lite = { default-features = false, features = ["alloc"], version = "2.6" }
 heapless = { features = ["defmt-03"], version = "0.8" }
 log = { features = ["max_level_debug"], version = "0.4" }
 sntpc = { default-features = false, features = ["embassy-socket", "log"], version = "0.5" }
 static_cell = { features = ["nightly"], version = "2.1" }
-time = { default-features = false, features = ["alloc", "macros", "parsing"], version = "0.3" }
 tinybmp = "0.6"
 
 [features]

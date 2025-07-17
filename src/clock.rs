@@ -2,6 +2,8 @@
 
 use core::net::SocketAddr;
 
+use chrono::{DateTime, Utc};
+use chrono_tz::Tz;
 use embassy_executor::Spawner;
 use embassy_net::{
     dns::DnsQueryType,
@@ -13,7 +15,6 @@ use esp_hal::{peripherals::WIFI, rng::Rng, timer::timg::Timer as TimgTimer};
 use log::{error, info};
 use sntpc::NtpContext;
 use static_cell::make_static;
-use time::{Date, OffsetDateTime, UtcOffset, macros::format_description};
 
 use crate::wifi::{STOP_WIFI_SIGNAL, TimestampGenerator, WiFiStack};
 
@@ -56,24 +57,19 @@ pub(super) struct Clock(&'static Mutex<NoopRawMutex, ClockInner>);
 struct ClockInner {
     /// The boot time in seconds since the epoch.
     boot_timestamp: u64,
-    /// The offset of the current timezone.
-    timezone_offset: UtcOffset,
+    /// The current timezone.
+    timezone: Tz,
 }
 
 impl Clock {
-    /// Whether to enable daylight saving time.
-    ///
-    /// # Note
-    /// The date range is defined in `.cargo/config.toml` as `DST_RANGE`.
-    const DAYLIGHT_SAVING_TIME: bool = option_env!("DST_ENABLE").is_some();
     /// The NTP server to use for time synchronization.
     ///
     /// If none is provided `pool.ntp.org` is used by default.
     const NTP_SERVER: &str = env!("NTP_SERVER");
-    /// The provided timezone offset.
+    /// The provided timezone.
     ///
     /// If none is provided it is assumed to be UTC.
-    const TIMEZONE_OFFSET: Option<&str> = option_env!("TIMEZONE_OFFSET");
+    const TIMEZONE: Option<&str> = option_env!("TIMEZONE");
 
     /// Create a new [`Clock`].
     ///
@@ -84,11 +80,11 @@ impl Clock {
 
     /// Get the current time.
     #[expect(clippy::cast_possible_wrap)]
-    pub(super) async fn now(&self) -> Option<OffsetDateTime> {
+    pub(super) async fn now(&self) -> DateTime<Tz> {
         let inner = *self.0.lock().await;
         let epoch = Instant::now().as_secs() + inner.boot_timestamp;
-        let utc = OffsetDateTime::from_unix_timestamp(epoch as i64).ok()?;
-        utc.checked_to_offset(inner.timezone_offset)
+        let utc = DateTime::<Utc>::from_timestamp(epoch.max(0) as i64, 0).unwrap();
+        utc.with_timezone(&inner.timezone)
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -145,50 +141,22 @@ impl Clock {
         self.0.lock().await.boot_timestamp =
             u64::from(ntp_result.sec()).saturating_sub(Instant::now().as_secs());
 
-        // TODO: Clean this up
-        if let Some(mut now) = self.now().await {
-            // Adjust the timezone for daylight saving time if enabled.
-            if Self::DAYLIGHT_SAVING_TIME {
-                let description = format_description!("[year]-[month]-[day]");
-                let mut inner = self.0.lock().await;
-
-                if let Some(start) = Date::parse(env!("DST_RANGE_START"), description)
-                    .ok()
-                    .and_then(|d| d.replace_year(now.year()).ok())
-                    && let Some(end) = Date::parse(env!("DST_RANGE_END"), description)
-                        .ok()
-                        .and_then(|d| d.replace_year(now.year()).ok())
-                {
-                    if now.date() > start && now.date() < end {
-                        let (h, m, s) = inner.timezone_offset.as_hms();
-                        inner.timezone_offset = UtcOffset::from_hms(h.saturating_add(1) % 25, m, s)
-                            .expect("Always within the valid range");
-
-                        drop(inner);
-                        now = self.now().await.expect("Was already proved valid");
-                    }
-                } else {
-                    error!("Failed to parse DST dates, pretending DST is disabled");
-                }
-            }
-
-            info!("Current time: {now}");
-        }
+        info!("Current time: {}", self.now().await);
     }
 }
 
 impl Default for ClockInner {
     fn default() -> Self {
-        if let Some(offset) = Clock::TIMEZONE_OFFSET {
-            match UtcOffset::parse(offset, format_description!("[offset_hour][offset_minute]")) {
-                Ok(timezone_offset) => Self { boot_timestamp: 0, timezone_offset },
+        if let Some(offset) = Clock::TIMEZONE {
+            match offset.parse::<Tz>() {
+                Ok(timezone) => Self { boot_timestamp: 0, timezone },
                 Err(err) => {
-                    error!("Failed to parse timezone offset: {err:?}");
-                    Self { boot_timestamp: 0, timezone_offset: UtcOffset::UTC }
+                    error!("Failed to parse timezone: {err:?}");
+                    Self { boot_timestamp: 0, timezone: Tz::UTC }
                 }
             }
         } else {
-            Self { boot_timestamp: 0, timezone_offset: UtcOffset::UTC }
+            Self { boot_timestamp: 0, timezone: Tz::UTC }
         }
     }
 }

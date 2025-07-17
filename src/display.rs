@@ -2,6 +2,7 @@
 //!
 //! See [`KerfurDisplay::execute`] for the main display logic.
 
+use chrono::{Datelike, Timelike};
 use embassy_executor::Spawner;
 use embassy_time::Timer;
 use embedded_graphics::{
@@ -64,7 +65,6 @@ async fn display_manager(mut kerfur: KerfurDisplay) -> ! {
     loop {
         // Execute the display loop, which will run until an error occurs.
         match kerfur.execute().await {
-            Err(DisplayManagerError::ClockError(err)) => error!("Clock error: {err:?}"),
             Err(DisplayManagerError::DisplayI2c(err)) => error!("Display I2C error: {err:?}"),
         }
 
@@ -77,8 +77,6 @@ async fn display_manager(mut kerfur: KerfurDisplay) -> ! {
 /// Errors that can occur in the display manager.
 #[non_exhaustive]
 enum DisplayManagerError {
-    /// An error occurred while retrieving the current time.
-    ClockError(time::Error),
     /// An error occurred while communicating with the display.
     DisplayI2c(I2cError),
 }
@@ -93,10 +91,6 @@ impl From<DisplayError<I2cError, ()>> for DisplayManagerError {
             DisplayError::Pin(()) => unreachable!(),
         }
     }
-}
-
-impl From<time::Error> for DisplayManagerError {
-    fn from(err: time::Error) -> Self { DisplayManagerError::ClockError(err) }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -191,28 +185,25 @@ impl KerfurDisplay {
             KerfurFace::Blink => self.blink.draw(&mut self.display).unwrap(),
             KerfurFace::Meow => self.meow.draw(&mut self.display).unwrap(),
             KerfurFace::Clock => {
-                if let Some(date_time) = self.clock.now().await {
-                    self.display.clear();
+                let date_time = self.clock.now().await;
+                self.display.clear();
 
-                    // Draw the time
-                    let time = date_time.time();
-                    let time_str = alloc::format!("{:02}:{:02}", time.hour(), time.minute());
-                    Text::with_baseline(&time_str, Point::new(40, 20), self.font, Baseline::Top)
-                        .draw(&mut self.display)
-                        .unwrap();
+                // Draw the time
+                let time_str = alloc::format!("{:02}:{:02}", date_time.hour(), date_time.minute());
+                Text::with_baseline(&time_str, Point::new(40, 20), self.font, Baseline::Top)
+                    .draw(&mut self.display)
+                    .unwrap();
 
-                    // Draw the date
-                    let date = date_time.date();
-                    let date_str = alloc::format!(
-                        "{:02}/{:02}/{:04}",
-                        u8::from(date.month()),
-                        date.day(),
-                        date.year()
-                    );
-                    Text::with_baseline(&date_str, Point::new(10, 35), self.font, Baseline::Top)
-                        .draw(&mut self.display)
-                        .unwrap();
-                }
+                // Draw the date
+                let date_str = alloc::format!(
+                    "{:02}/{:02}/{:04}",
+                    date_time.month(),
+                    date_time.day(),
+                    date_time.year()
+                );
+                Text::with_baseline(&date_str, Point::new(10, 35), self.font, Baseline::Top)
+                    .draw(&mut self.display)
+                    .unwrap();
             }
         }
         self.display.flush()?;

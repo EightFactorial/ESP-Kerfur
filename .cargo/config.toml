@@ -17,17 +17,10 @@ WIFI_PASSWORD = "hunter2"
 # The SSID of the Wi-Fi network to connect to
 WIFI_SSID = "HomeNetwork"
 
-# The NTP server to use for time synchronization
+# The NTP server address
 NTP_SERVER = "pool.ntp.org"
-# The timezone offset from UTC
-TIMEZONE_OFFSET = "-08:00" # Pacific Standard Time (PST)
-
-# Uncomment to enable Daylight Saving Time (DST)
-DST_ENABLE = "1"
-# The starting date for Daylight Saving Time
-DST_RANGE_START = "2025-03-09"
-# The ending date for Daylight Saving Time
-DST_RANGE_END = "2025-11-02"
+# The timezone
+TIMEZONE = "America/Los_Angeles"
 
 [target.riscv32imc-unknown-none-elf]
 runner = "espflash flash --baud 1152000 --monitor"
