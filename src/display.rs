@@ -2,7 +2,8 @@
 //!
 //! See [`KerfurDisplay::execute`] for the main display logic.
 
-use chrono::{Datelike, Timelike};
+use alloc::string::ToString;
+
 use embassy_executor::Spawner;
 use embassy_time::Timer;
 use embedded_graphics::{
@@ -189,18 +190,13 @@ impl KerfurDisplay {
                 self.display.clear();
 
                 // Draw the time
-                let time_str = alloc::format!("{:02}:{:02}", date_time.hour(), date_time.minute());
+                let time_str = date_time.format("%-I:%M %p").to_string();
                 Text::with_baseline(&time_str, Point::new(40, 20), self.font, Baseline::Top)
                     .draw(&mut self.display)
                     .unwrap();
 
                 // Draw the date
-                let date_str = alloc::format!(
-                    "{:02}/{:02}/{:04}",
-                    date_time.month(),
-                    date_time.day(),
-                    date_time.year()
-                );
+                let date_str = date_time.format("%m/%d/%Y").to_string();
                 Text::with_baseline(&date_str, Point::new(10, 35), self.font, Baseline::Top)
                     .draw(&mut self.display)
                     .unwrap();

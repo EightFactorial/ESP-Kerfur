@@ -55,7 +55,7 @@ impl WiFiStack {
                 return Err(err);
             }
         };
-        let _ = controller.set_power_saving(PowerSaveMode::Minimum);
+        let _ = controller.set_power_saving(PowerSaveMode::None);
 
         // Concatenate two random u32 values to create a u64 seed.
         let (seed_a, seed_b) = (rng.random().to_ne_bytes(), rng.random().to_ne_bytes());
@@ -104,13 +104,19 @@ pub(super) static STOP_WIFI_SIGNAL: Signal<CriticalSectionRawMutex, ()> = Signal
 #[embassy_executor::task]
 async fn connection_task(controller: &'static mut WifiController<'static>) {
     #[cfg(feature = "logging")]
-    esp_wifi::wifi_set_log_verbose();
+    {
+        if env!("ESP_LOG").eq_ignore_case("trace") {
+            esp_wifi::wifi_set_log_verbose();
+        }
+    }
 
     info!("Starting WiFi background task");
     let _ = controller.disconnect_async().await;
 
-    let mut found_network = false;
+    let mut found_network = true;
+
     let mut attempts = 0u8;
+    let max_attempts = 8u8;
 
     loop {
         // If we're already connected, wait until we disconnect.
@@ -185,10 +191,10 @@ async fn connection_task(controller: &'static mut WifiController<'static>) {
                 error!("Failed to connect to WiFi network: {err:?}");
 
                 attempts += 1;
-                if attempts >= 5 {
+                if attempts >= max_attempts {
                     attempts = 0;
                     found_network = false;
-                    warn!("Failed to connect to WiFi network after 5 attempts, rescanning");
+                    warn!("Failed to connect to WiFi network, rescanning");
                 }
 
                 Timer::after_secs(5).await;

@@ -66,7 +66,7 @@ esp-bootloader-esp-idf = { features = ["esp-rom-sys", "log-04"], version = "0.2"
 esp-hal = { features = ["unstable"], version = "1.0.0-rc.0" }
 esp-hal-embassy = { version = "0.9" }
 esp-println = { features = ["defmt-espflash", "log-04"], version = "0.15" }
-esp-wifi = { features = ["builtin-scheduler", "wifi"], version = "0.15" }
+esp-wifi = { features = ["builtin-scheduler", "coex", "wifi"], version = "0.15" }
 
 # Peripherals
 sh1106 = { features = ["graphics"], version = "0.5" }
@@ -77,16 +77,15 @@ chrono-tz = { default-features = false, version = "0.10" }
 defmt = { features = ["alloc", "ip_in_core"], version = "1.0" }
 futures-lite = { default-features = false, features = ["alloc"], version = "2.6" }
 heapless = { features = ["defmt-03"], version = "0.8" }
-log = { features = ["max_level_debug"], version = "0.4" }
+log = { features = ["release_max_level_debug"], version = "0.4" }
 sntpc = { default-features = false, features = ["embassy-socket", "log"], version = "0.5" }
 static_cell = { features = ["nightly"], version = "2.1" }
 tinybmp = "0.6"
 
 [features]
-default = ["release"]
+default = []
 
 logging = ["esp-alloc/defmt", "esp-hal/log-04", "esp-wifi/log-04", "esp-wifi/sys-logs"]
-release = ["log/release_max_level_info"]
 
 # Configure dependencies for ESP32-S2
 # Note: Remember to change the target in `.cargo/config.toml`
