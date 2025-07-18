@@ -245,8 +245,8 @@ impl KerfurDisplay {
                 },
                 // Wait for a button press to meow
                 async {
-                    // `Input::wait_for` is described as "not cancellation-safe"
-                    // in the docs, but the sentence before it seems to imply that it is?
+                    // `Input::wait_for` is documented as "not cancellation-safe",
+                    // but the description of why seems to imply that it is?
                     self.trigger.wait_for_high().await;
 
                     future::or::<KerfurAction, _, _>(
@@ -276,10 +276,15 @@ impl KerfurDisplay {
                     self.display_face(KerfurFace::Meow).await?;
                     Timer::after_millis(500).await;
                 }
-                // Show the clock face
+                // Show the meow face, then the clock face
                 KerfurAction::Time => {
+                    self.display_face(KerfurFace::Meow).await?;
+                    Timer::after_millis(500).await;
                     self.display_face(KerfurFace::Clock).await?;
                     Timer::after_millis(5000).await;
+                    // If the button is still being held,
+                    // wait for it to be released before continuing.
+                    self.trigger.wait_for_low().await;
                 }
             }
         }

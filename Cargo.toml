@@ -43,6 +43,11 @@ unnecessary_cast = "warn"
 unwrap_used = "deny"
 used_underscore_binding = "allow"
 
+[profile.dev.package.esp-hal]
+opt-level = 3
+[profile.dev.package.esp-wifi]
+opt-level = 3
+
 [profile.release]
 codegen-units = 1
 incremental = false
@@ -63,7 +68,7 @@ embedded-hal = { version = "=0.2.7" }
 esp-alloc = { features = ["nightly"], version = "0.8" }
 esp-backtrace = { features = ["exception-handler", "panic-handler", "println"], version = "0.17" }
 esp-bootloader-esp-idf = { features = ["esp-rom-sys", "log-04"], version = "0.2" }
-esp-hal = { features = ["unstable"], version = "1.0.0-rc.0" }
+esp-hal = { features = ["rt", "unstable"], version = "1.0.0-rc.0" }
 esp-hal-embassy = { version = "0.9" }
 esp-println = { features = ["defmt-espflash", "log-04"], version = "0.15" }
 esp-wifi = { features = ["builtin-scheduler", "coex", "wifi"], version = "0.15" }

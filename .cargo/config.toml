@@ -12,11 +12,16 @@ ESP_WIFI_CONFIG_COUNTRY_CODE = "US"
 # 0 = "Fast Scan", 1 = "All Channels"
 ESP_WIFI_CONFIG_SCAN_METHOD = "0"
 
+# The Wi-Fi authentication method
+WIFI_AUTH_METHOD = "WPAWPA2Personal"
 # The password for the Wi-Fi network
 WIFI_PASSWORD = "hunter2"
 # The SSID of the Wi-Fi network to connect to
 WIFI_SSID = "HomeNetwork"
 
+# The default time to use before syncing with NTP
+# Useful for development, set using `BOOT_TIME=$(date +%s)`
+BOOT_TIME = ""
 # The NTP server address
 NTP_SERVER = "pool.ntp.org"
 # The timezone

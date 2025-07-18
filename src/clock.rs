@@ -1,6 +1,6 @@
 //! The clock module.
 
-use core::net::SocketAddr;
+use core::{net::SocketAddr, num::IntErrorKind};
 
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
@@ -62,6 +62,14 @@ struct ClockInner {
 }
 
 impl Clock {
+    /// The boot time in seconds since the epoch.
+    ///
+    /// Useful for testing to skip the NTP synchronization step.
+    const BOOT_TIME: u64 = match u64::from_str_radix(env!("BOOT_TIME"), 10) {
+        Ok(time) => time,
+        Err(err) if matches!(err.kind(), IntErrorKind::Empty | IntErrorKind::Zero) => 0,
+        Err(..) => panic!("Invalid `BOOT_TIME` environment variable, must be empty or a valid u64"),
+    };
     /// The NTP server to use for time synchronization.
     ///
     /// If none is provided `pool.ntp.org` is used by default.
@@ -82,8 +90,9 @@ impl Clock {
     #[expect(clippy::cast_possible_wrap)]
     pub(super) async fn now(&self) -> DateTime<Tz> {
         let inner = *self.0.lock().await;
-        let epoch = Instant::now().as_secs() + inner.boot_timestamp;
-        let utc = DateTime::<Utc>::from_timestamp(epoch.max(0) as i64, 0).unwrap();
+        let epoch = Instant::now().as_secs().wrapping_add(inner.boot_timestamp) as i64;
+        let utc = DateTime::<Utc>::from_timestamp(epoch.max(0), 0)
+            .expect("It is impossible for epoch to be invalid");
         utc.with_timezone(&inner.timezone)
     }
 
@@ -149,14 +158,14 @@ impl Default for ClockInner {
     fn default() -> Self {
         if let Some(offset) = Clock::TIMEZONE {
             match offset.parse::<Tz>() {
-                Ok(timezone) => Self { boot_timestamp: 0, timezone },
+                Ok(timezone) => Self { boot_timestamp: Clock::BOOT_TIME, timezone },
                 Err(err) => {
                     error!("Failed to parse timezone: {err:?}");
-                    Self { boot_timestamp: 0, timezone: Tz::UTC }
+                    Self { boot_timestamp: Clock::BOOT_TIME, timezone: Tz::UTC }
                 }
             }
         } else {
-            Self { boot_timestamp: 0, timezone: Tz::UTC }
+            Self { boot_timestamp: Clock::BOOT_TIME, timezone: Tz::UTC }
         }
     }
 }

@@ -8,8 +8,8 @@ use esp_hal::{peripherals::WIFI, rng::Rng, timer::timg::Timer as TimgTimer};
 use esp_wifi::{
     config::PowerSaveMode,
     wifi::{
-        ClientConfiguration, Configuration, WifiController, WifiDevice, WifiError, WifiEvent,
-        WifiState, wifi_state,
+        AuthMethod, ClientConfiguration, Configuration, WifiController, WifiDevice, WifiError,
+        WifiEvent, WifiState, wifi_state,
     },
 };
 use futures_lite::future;
@@ -21,6 +21,19 @@ use static_cell::make_static;
 pub(super) struct WiFiStack(Stack<'static>);
 
 impl WiFiStack {
+    /// The WiFi authentication method to use.
+    const WIFI_AUTH_METHOD: AuthMethod = match env!("WIFI_AUTH_METHOD").as_bytes() {
+        b"None" => AuthMethod::None,
+        b"WEP" => AuthMethod::WEP,
+        b"WPA" => AuthMethod::WPA,
+        b"WPA2Personal" => AuthMethod::WPA2Personal,
+        b"WPAWPA2Personal" => AuthMethod::WPAWPA2Personal,
+        b"WPA2Enterprise" => AuthMethod::WPA2Enterprise,
+        b"WPA3Personal" => AuthMethod::WPA3Personal,
+        b"WPA2WPA3Personal" => AuthMethod::WPA2WPA3Personal,
+        b"WAPIPersonal" => AuthMethod::WAPIPersonal,
+        _ => core::panic!("Unknown WiFi authentication method"),
+    };
     /// The WiFi password, if any.
     const WIFI_PASSWORD: &str = env!("WIFI_PASSWORD");
     /// The WiFi SSID to connect to.
@@ -114,6 +127,7 @@ async fn connection_task(controller: &'static mut WifiController<'static>) {
     let _ = controller.disconnect_async().await;
 
     let mut found_network = true;
+    let mut warn_auth_method = false;
 
     let mut attempts = 0u8;
     let max_attempts = 8u8;
@@ -130,6 +144,7 @@ async fn connection_task(controller: &'static mut WifiController<'static>) {
             let config = ClientConfiguration {
                 ssid: WiFiStack::WIFI_SSID.into(),
                 password: WiFiStack::WIFI_PASSWORD.into(),
+                auth_method: WiFiStack::WIFI_AUTH_METHOD,
                 ..Default::default()
             };
 
@@ -153,7 +168,14 @@ async fn connection_task(controller: &'static mut WifiController<'static>) {
                             "    SSID: \"{}\", BSSID: {:?}, RSSI: {}, AUTH: {:?}",
                             net.ssid, net.bssid, net.signal_strength, net.auth_method
                         );
-                        net.ssid == WiFiStack::WIFI_SSID
+                        if net.auth_method == Some(WiFiStack::WIFI_AUTH_METHOD) {
+                            return net.ssid == WiFiStack::WIFI_SSID;
+                        } else if warn_auth_method {
+                            warn!("Found target WiFi network, but authentication method does not match!");
+                            warn_auth_method = true;
+                        }
+
+                        false
                     }) {
                         info!("Found target WiFi network: \"{}\"", WiFiStack::WIFI_SSID);
                         found_network = true;
@@ -167,8 +189,8 @@ async fn connection_task(controller: &'static mut WifiController<'static>) {
 
             warn!("Waiting for WiFi network to be available...");
 
-            // Wait for a while before rescanning.
-            Timer::after_secs(20).await;
+            // Wait before rescanning.
+            Timer::after_secs(30).await;
         }
 
         // Attempt to connect to the WiFi network.
@@ -197,7 +219,8 @@ async fn connection_task(controller: &'static mut WifiController<'static>) {
                     warn!("Failed to connect to WiFi network, rescanning");
                 }
 
-                Timer::after_secs(5).await;
+                // Wait before trying again.
+                Timer::after_secs(10).await;
             }
         }
     }
