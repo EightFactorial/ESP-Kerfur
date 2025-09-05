@@ -3,7 +3,7 @@
 //! Imports required components, calls setup macros, and initializes the device.
 
 use esp_alloc::heap_allocator;
-use esp_hal::{Config, clock::CpuClock, peripherals::Peripherals};
+use esp_hal::{Config, peripherals::Peripherals};
 use esp_println::logger::init_logger_from_env;
 use log::info;
 
@@ -26,12 +26,6 @@ fn panic() -> ! { core::panic!("panic via `defmt::panic!`") }
 
 // -------------------------------------------------------------------------------------------------
 
-#[cfg(not(any(feature = "esp32c3", feature = "esp32c6")))]
-compile_error!("Either the `esp32c3` or `esp32c6` feature must be enabled.");
-
-#[cfg(all(feature = "esp32c3", feature = "esp32c6"))]
-compile_error!("Only one of the `esp32c3` or `esp32c6` features can be enabled.");
-
 /// Initialize the device.
 pub(super) fn init() -> Peripherals {
     // Initialize the logger
@@ -39,9 +33,9 @@ pub(super) fn init() -> Peripherals {
     info!("Initialized the logger");
 
     // Initialize the heap allocator
-    heap_allocator!(size: 64 * 1000);
+    heap_allocator!(#[unsafe(link_section = ".dram2_uninit")] size: 64 * 1000);
     info!("Initialized the heap");
 
     // Initialize the microcontroller
-    esp_hal::init(Config::default().with_cpu_clock(CpuClock::_80MHz))
+    esp_hal::init(Config::default())
 }

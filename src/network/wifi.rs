@@ -1,26 +1,106 @@
-//! The WiFi module.
+//! TODO
 
 use embassy_executor::Spawner;
-use embassy_net::{Config, DhcpConfig, Runner, Stack, StackResources};
+use embassy_net::{Config as WifiConfig, DhcpConfig, Runner, Stack, StackResources};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
-use embassy_time::{Instant, Timer};
-use esp_hal::{peripherals::WIFI, rng::Rng, timer::timg::Timer as TimgTimer};
+use embassy_time::Timer;
+use esp_hal::{peripherals::WIFI, rng::Rng};
 use esp_wifi::{
+    EspWifiTimerSource,
     config::PowerSaveMode,
     wifi::{
         AuthMethod, ClientConfiguration, Configuration, WifiController, WifiDevice, WifiError,
         WifiEvent, WifiState, wifi_state,
     },
 };
-use futures_lite::future;
 use log::{debug, error, info, warn};
-use sntpc::NtpTimestampGenerator;
 use static_cell::make_static;
 
-/// A handle to the WiFi stack.
-pub(super) struct WiFiStack(Stack<'static>);
+/// TODO
+pub struct KerfWifi {
+    /// A handle to the network stack.
+    stack: Stack<'static>,
+}
 
-impl WiFiStack {
+impl KerfWifi {
+    /// Access the inner [`embassy_net::Stack`].
+    #[must_use]
+    pub const fn stack(&self) -> Stack<'static> { self.stack }
+
+    /// Attempt to create a new [`KerfWifi`].
+    pub async fn new<T: EspWifiTimerSource + 'static>(
+        wifi: WIFI<'static>,
+        timer: T,
+        mut rand: Rng,
+        spawner: Spawner,
+    ) -> Result<Self, WifiError> {
+        // Initialize the WiFi controller and interfaces.
+        let esp_controller =
+            make_static!(esp_wifi::init(timer, rand).expect("Failed to initialize `esp_wifi`!"));
+        let (mut controller, interfaces) = match esp_wifi::wifi::new(esp_controller, wifi) {
+            Ok((controller, interfaces)) => (controller, interfaces),
+            Err(err) => {
+                error!("Failed to initialize WiFi interface: {err:?}");
+                return Err(err);
+            }
+        };
+
+        // Attempt to set the `PowerSaveMode` to `Minimum`.
+        if let Err(err) = controller.set_power_saving(PowerSaveMode::Minimum) {
+            warn!("Failed to set WiFi `PowerSaveMode`: {err:?}");
+        }
+
+        // Concatenate two random u32 values to create a u64 seed.
+        let (seed_a, seed_b) = (rand.random().to_ne_bytes(), rand.random().to_ne_bytes());
+        let random_seed = u64::from_ne_bytes([
+            seed_a[0], seed_a[1], seed_a[2], seed_a[3], seed_b[0], seed_b[1], seed_b[2], seed_b[3],
+        ]);
+
+        // Create a DHCP config and memory for a network stack.
+        let config = WifiConfig::dhcpv4(DhcpConfig::default());
+        let resources: &'static mut StackResources<4> = make_static!(StackResources::new());
+
+        // Create the stack and spawn the network and connection tasks.
+        let (stack, runner) = embassy_net::new(interfaces.sta, config, resources, random_seed);
+        spawner.must_spawn(network_task(runner));
+        spawner.must_spawn(connection_task(controller));
+
+        // Wait for the network to come up.
+        stack.wait_link_up().await;
+        info!("Waiting for DHCP configuration...");
+        stack.wait_config_up().await;
+
+        // Log the assigned network address.
+        if let Some(config) = stack.config_v4() {
+            info!("Assigned network address: {}", config.address);
+        } else {
+            warn!("Assumed to have an address, but none found?");
+        }
+
+        // Return the initialized WiFi stack.
+        Ok(Self { stack })
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+/// A [`Signal`] to stop the [`network_task`].
+static STOP_NETWORK_SIGNAL: Signal<CriticalSectionRawMutex, ()> = Signal::new();
+
+#[embassy_executor::task]
+async fn network_task(mut runner: Runner<'static, WifiDevice<'static>>) {
+    info!("Starting network background task");
+    futures_lite::future::or(async { runner.run().await }, STOP_NETWORK_SIGNAL.wait()).await;
+    info!("Stopping network background task");
+}
+
+// -------------------------------------------------------------------------------------------------
+
+/// A [`Signal`] to stop the [`connection_task`].
+pub static STOP_CONNECTION_SIGNAL: Signal<CriticalSectionRawMutex, ()> = Signal::new();
+
+#[embassy_executor::task]
+async fn connection_task(mut controller: WifiController<'static>) {
     /// The WiFi authentication method to use.
     const WIFI_AUTH_METHOD: AuthMethod = match env!("WIFI_AUTH_METHOD").as_bytes() {
         b"None" => AuthMethod::None,
@@ -32,103 +112,27 @@ impl WiFiStack {
         b"WPA3Personal" => AuthMethod::WPA3Personal,
         b"WPA2WPA3Personal" => AuthMethod::WPA2WPA3Personal,
         b"WAPIPersonal" => AuthMethod::WAPIPersonal,
-        _ => core::panic!("Unknown WiFi authentication method"),
+        _ => panic!("Unknown WiFi authentication method"),
     };
     /// The WiFi password, if any.
     const WIFI_PASSWORD: &str = env!("WIFI_PASSWORD");
     /// The WiFi SSID to connect to.
     const WIFI_SSID: &str = env!("WIFI_SSID");
 
-    /// Access the inner [`Stack`].
-    #[must_use]
-    pub(super) const fn stack(&self) -> Stack<'static> { self.0 }
-
-    // ---------------------------------------------------------------------------------------------
-
-    /// Create a new [`WiFiStack`].
-    ///
-    /// # Panics
-    /// Only one stack can ever exist.
-    /// Calling this function twice will immediately panic.
-    pub(super) async fn new(
-        spawner: Spawner,
-        timer: TimgTimer<'static>,
-        wifi: WIFI<'static>,
-        mut rng: Rng,
-    ) -> Result<Self, WifiError> {
-        // Initialize the WiFi radio.
-        let controller =
-            make_static!(esp_wifi::init(timer, rng).expect("Failed to initialize `esp_wifi`?"));
-
-        // Initialize the WiFi controller and interfaces.
-        let (mut controller, interfaces) = match esp_wifi::wifi::new(controller, wifi) {
-            Ok((controller, interfaces)) => (controller, interfaces),
-            Err(err) => {
-                error!("Failed to create WiFi controller: {err:?}");
-                return Err(err);
-            }
-        };
-        let _ = controller.set_power_saving(PowerSaveMode::Minimum);
-
-        // Concatenate two random u32 values to create a u64 seed.
-        let (seed_a, seed_b) = (rng.random().to_ne_bytes(), rng.random().to_ne_bytes());
-        let seed = u64::from_ne_bytes([
-            seed_a[0], seed_a[1], seed_a[2], seed_a[3], seed_b[0], seed_b[1], seed_b[2], seed_b[3],
-        ]);
-
-        // Create a new stack and network configuration.
-        let resources: &mut StackResources<4> = make_static!(StackResources::new());
-        let config = Config::dhcpv4(DhcpConfig::default());
-
-        // Spawn the network and connection tasks.
-        let (stack, runner) = embassy_net::new(interfaces.sta, config, resources, seed);
-        spawner.must_spawn(network_task(make_static!(runner)));
-        spawner.must_spawn(connection_task(make_static!(controller)));
-
-        stack.wait_link_up().await;
-        info!("Waiting for DHCP configuration...");
-        stack.wait_config_up().await;
-
-        if let Some(config) = stack.config_v4() {
-            info!("Assigned network address: {}", config.address);
-        } else {
-            warn!("Assumed to have an address, but none found?");
-        }
-
-        Ok(Self(stack))
-    }
-}
-
-// -------------------------------------------------------------------------------------------------
-
-/// A [`Signal`] to stop the network task.
-static STOP_NETWORK_SIGNAL: Signal<CriticalSectionRawMutex, ()> = Signal::new();
-
-#[embassy_executor::task]
-async fn network_task(runner: &'static mut Runner<'static, WifiDevice<'static>>) {
-    info!("Starting network background task");
-    future::or(async { runner.run().await }, STOP_NETWORK_SIGNAL.wait()).await;
-    info!("Stopping network background task");
-}
-
-/// A [`Signal`] to stop the connection task.
-pub(super) static STOP_WIFI_SIGNAL: Signal<CriticalSectionRawMutex, ()> = Signal::new();
-
-#[embassy_executor::task]
-async fn connection_task(controller: &'static mut WifiController<'static>) {
+    // Enable verbose logging if `ESP_LOG` is set to `trace`.
     #[cfg(feature = "logging")]
     if const { env!("ESP_LOG").eq_ignore_ascii_case("trace") } {
         esp_wifi::wifi_set_log_verbose();
     }
-
-    info!("Starting WiFi background task");
-    let _ = controller.disconnect_async().await;
 
     let mut found_network = true;
     let mut warn_auth_method = false;
 
     let mut attempts = 0u8;
     let max_attempts = 8u8;
+
+    info!("Starting WiFi background task");
+    let _ = controller.disconnect_async().await;
 
     loop {
         // If we're already connected, wait until we disconnect.
@@ -140,9 +144,9 @@ async fn connection_task(controller: &'static mut WifiController<'static>) {
         // If the controller hasn't been started, configure and start it.
         if !matches!(controller.is_started(), Ok(true)) {
             let config = ClientConfiguration {
-                ssid: WiFiStack::WIFI_SSID.into(),
-                password: WiFiStack::WIFI_PASSWORD.into(),
-                auth_method: WiFiStack::WIFI_AUTH_METHOD,
+                ssid: WIFI_SSID.into(),
+                password: WIFI_PASSWORD.into(),
+                auth_method: WIFI_AUTH_METHOD,
                 ..Default::default()
             };
 
@@ -162,20 +166,23 @@ async fn connection_task(controller: &'static mut WifiController<'static>) {
                 Ok(res) => {
                     debug!("Network Scan:");
                     if res.iter().any(|net| {
+                        // Debug log all found networks.
                         debug!(
                             "    SSID: \"{}\", BSSID: {:?}, RSSI: {}, AUTH: {:?}",
                             net.ssid, net.bssid, net.signal_strength, net.auth_method
                         );
-                        if net.auth_method == Some(WiFiStack::WIFI_AUTH_METHOD) {
-                            return net.ssid == WiFiStack::WIFI_SSID;
+                        // If the SSID and AuthMethod matches, return `true`.
+                        if net.auth_method == Some(WIFI_AUTH_METHOD) {
+                            return net.ssid == WIFI_SSID;
                         } else if warn_auth_method {
+                            // Warn once if the SSID matches but the authentication method does not.
                             warn!("Found target WiFi network, but authentication method does not match!");
                             warn_auth_method = true;
                         }
 
                         false
                     }) {
-                        info!("Found target WiFi network: \"{}\"", WiFiStack::WIFI_SSID);
+                        info!("Found target WiFi network: \"{WIFI_SSID}\"");
                         found_network = true;
                         break;
                     }
@@ -185,9 +192,8 @@ async fn connection_task(controller: &'static mut WifiController<'static>) {
                 }
             }
 
-            warn!("Waiting for WiFi network to be available...");
-
             // Wait before rescanning.
+            warn!("Waiting for WiFi network to be available...");
             Timer::after_secs(30).await;
         }
 
@@ -195,13 +201,15 @@ async fn connection_task(controller: &'static mut WifiController<'static>) {
         match controller.connect_async().await {
             Ok(()) => {
                 info!("Connected to WiFi network");
-                STOP_WIFI_SIGNAL.wait().await;
+                STOP_CONNECTION_SIGNAL.wait().await;
 
+                // If signaled to stop, disconnect from the network
                 info!("Disconnecting from WiFi network");
                 if let Err(err) = controller.disconnect_async().await {
                     error!("Failed to disconnect from WiFi network: {err:?}");
                 }
 
+                // Send a stop signal to the network task
                 info!("Stopping WiFi background task");
                 STOP_NETWORK_SIGNAL.signal(());
 
@@ -210,6 +218,7 @@ async fn connection_task(controller: &'static mut WifiController<'static>) {
             Err(err) => {
                 error!("Failed to connect to WiFi network: {err:?}");
 
+                // After failed to connect too many times, rescan for the network.
                 attempts += 1;
                 if attempts >= max_attempts {
                     attempts = 0;
@@ -218,27 +227,8 @@ async fn connection_task(controller: &'static mut WifiController<'static>) {
                 }
 
                 // Wait before trying again.
-                Timer::after_secs(10).await;
+                Timer::after_secs(15).await;
             }
         }
-    }
-}
-
-// -------------------------------------------------------------------------------------------------
-
-/// A simple [`NtpTimestampGenerator`] implementation
-/// that uses [`Instant`] to generate timestamps.
-#[derive(Clone, Copy)]
-pub(super) struct TimestampGenerator;
-
-impl NtpTimestampGenerator for TimestampGenerator {
-    fn init(&mut self) {}
-
-    fn timestamp_sec(&self) -> u64 { Instant::now().as_secs() }
-
-    fn timestamp_subsec_micros(&self) -> u32 {
-        let instant = Instant::now();
-        let fraction = instant.as_micros().saturating_sub(instant.as_secs() * 1_000_000);
-        u32::try_from(fraction).unwrap_or_default()
     }
 }
