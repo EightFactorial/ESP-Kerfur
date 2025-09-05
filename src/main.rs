@@ -53,7 +53,7 @@ async fn main(spawner: Spawner) -> ! {
 
 // -------------------------------------------------------------------------------------------------
 
-/// Kurfur's brain.
+/// Kerfur's brain.
 ///
 /// Manages all display, audio, time, and touch logic.
 pub struct Kerfur {
@@ -146,7 +146,7 @@ impl Kerfur {
     }
 }
 
-/// An action that occured, either a blink or a touch.
+/// An action that occurred, either a blink or a touch.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum KerfAction {
     /// Blink
