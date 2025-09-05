@@ -8,7 +8,10 @@ use esp_hal::{
     i2c::master::{Config, Error as I2cError, I2c, Instance as I2cInstance},
     time::Rate,
 };
-use sh1106::{mode::displaymode::DisplayModeTrait, prelude::*, properties::DisplayProperties};
+use sh1106::{
+    Error as DisplayError, mode::displaymode::DisplayModeTrait, prelude::*,
+    properties::DisplayProperties,
+};
 
 mod audio;
 pub use audio::KerfAudio;
@@ -47,6 +50,14 @@ impl KerfDisplay {
                 DisplayRotation::Rotate180,
             )),
         }
+    }
+
+    /// Initialize the display.
+    pub fn init(&mut self) -> Result<(), I2cError> {
+        self.display.init().map_err(|err| match err {
+            DisplayError::Comm(err) => err,
+            DisplayError::Pin(()) => unreachable!(),
+        })
     }
 }
 

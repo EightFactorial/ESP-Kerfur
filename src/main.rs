@@ -29,7 +29,7 @@ async fn main(spawner: Spawner) -> ! {
 
     // Create a display and draw the confused screen.
     let mut display = KerfDisplay::new(per.I2C0, per.GPIO3, per.GPIO4);
-    if let Err(err) = KerfEmote::Confused.draw(&mut display) {
+    if let Err(err) = display.init().and_then(|()| KerfEmote::Confused.draw(&mut display)) {
         error!("Failed to draw startup emote: {err}");
     }
 
