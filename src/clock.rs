@@ -1,18 +1,24 @@
 //! The clock module.
 
-use core::{net::SocketAddr, num::IntErrorKind};
+use core::{
+    net::{IpAddr, SocketAddr},
+    num::IntErrorKind,
+    str::FromStr,
+};
 
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
 use embassy_executor::Spawner;
 use embassy_net::{
+    IpAddress,
     dns::DnsQueryType,
     udp::{PacketMetadata, UdpSocket},
 };
 use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
-use embassy_time::Instant;
+use embassy_time::{Duration, Instant, Timer, with_timeout};
 use esp_hal::{peripherals::WIFI, rng::Rng, timer::timg::Timer as TimgTimer};
-use log::{error, info};
+use heapless::Vec;
+use log::{error, info, warn};
 use sntpc::NtpContext;
 use static_cell::make_static;
 
@@ -121,30 +127,65 @@ impl Clock {
             return;
         }
 
-        info!("Resolving NTP server address: \"{}\"", Self::NTP_SERVER);
+        let mut addrs = Vec::<IpAddress, _>::new();
+        let mut port = 123;
 
-        let context = NtpContext::new(TimestampGenerator);
-        let addrs = match wifi.stack().dns_query(Self::NTP_SERVER, DnsQueryType::A).await {
-            Err(err) => {
-                error!("Failed to resolve NTP server: {err:?}");
-                return;
+        if let Ok(SocketAddr::V4(addr)) = SocketAddr::from_str(Self::NTP_SERVER) {
+            let _ = addrs.push(IpAddress::Ipv4(*addr.ip()));
+            port = addr.port();
+        } else if let Ok(IpAddr::V4(addr)) = IpAddr::from_str(Self::NTP_SERVER) {
+            let _ = addrs.push(IpAddress::from(addr));
+        } else {
+            info!("Resolving NTP server address: \"{}\"", Self::NTP_SERVER);
+
+            while addrs.is_empty() {
+                // Try to resolve the NTP server address.
+                match with_timeout(
+                    Duration::from_secs(10),
+                    wifi.stack().dns_query(Self::NTP_SERVER, DnsQueryType::A),
+                )
+                .await
+                {
+                    Ok(Ok(resolved)) => {
+                        if resolved.is_empty() {
+                            error!("No addresses found for NTP server");
+                            return;
+                        }
+
+                        addrs = resolved;
+                    }
+                    Ok(Err(err)) => {
+                        error!("Failed to resolve NTP server: {err:?}, retrying...");
+                    }
+                    Err(..) => {
+                        warn!("DNS query for NTP server timed out, retrying...");
+                    }
+                }
+
+                // Wait a bit before retrying.
+                Timer::after_secs(10).await;
             }
-            Ok(addrs) if addrs.is_empty() => {
-                error!("No addresses found for NTP server");
-                return;
-            }
-            Ok(addrs) => addrs,
-        };
+        }
 
         info!("Fetching time from NTP server");
 
         // Set the boot timestamp
-        let ntp_addr = SocketAddr::new(addrs[0].into(), 123);
-        let ntp_result = match sntpc::get_time(ntp_addr, &socket, context).await {
-            Ok(result) => result,
-            Err(err) => {
-                error!("Failed to get time from NTP server: {err:?}");
-                return;
+        let context = NtpContext::new(TimestampGenerator);
+        let ntp_addr = SocketAddr::new(addrs[0].into(), port);
+        let ntp_result = loop {
+            match with_timeout(Duration::from_secs(10), sntpc::get_time(ntp_addr, &socket, context))
+                .await
+            {
+                Ok(Ok(result)) => break result,
+                Ok(Err(err)) => {
+                    error!("Failed to get time from NTP server: {err:?}");
+                    return;
+                }
+                Err(..) => {
+                    warn!("NTP request timed out, retrying...");
+                    // Wait a bit before retrying.
+                    Timer::after_secs(5).await;
+                }
             }
         };
         self.0.lock().await.boot_timestamp =

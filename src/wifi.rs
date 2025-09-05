@@ -68,7 +68,7 @@ impl WiFiStack {
                 return Err(err);
             }
         };
-        let _ = controller.set_power_saving(PowerSaveMode::None);
+        let _ = controller.set_power_saving(PowerSaveMode::Minimum);
 
         // Concatenate two random u32 values to create a u64 seed.
         let (seed_a, seed_b) = (rng.random().to_ne_bytes(), rng.random().to_ne_bytes());
@@ -77,7 +77,7 @@ impl WiFiStack {
         ]);
 
         // Create a new stack and network configuration.
-        let resources: &mut StackResources<_> = make_static!(StackResources::<4>::new());
+        let resources: &mut StackResources<4> = make_static!(StackResources::new());
         let config = Config::dhcpv4(DhcpConfig::default());
 
         // Spawn the network and connection tasks.
@@ -117,10 +117,8 @@ pub(super) static STOP_WIFI_SIGNAL: Signal<CriticalSectionRawMutex, ()> = Signal
 #[embassy_executor::task]
 async fn connection_task(controller: &'static mut WifiController<'static>) {
     #[cfg(feature = "logging")]
-    {
-        if env!("ESP_LOG").eq_ignore_case("trace") {
-            esp_wifi::wifi_set_log_verbose();
-        }
+    if const { env!("ESP_LOG").eq_ignore_ascii_case("trace") } {
+        esp_wifi::wifi_set_log_verbose();
     }
 
     info!("Starting WiFi background task");

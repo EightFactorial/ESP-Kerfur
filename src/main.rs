@@ -1,8 +1,7 @@
 //! TODO
-
 #![feature(never_type, type_alias_impl_trait)]
-#![no_std]
 #![no_main]
+#![no_std]
 
 extern crate alloc;
 
@@ -33,7 +32,7 @@ async fn main(spawner: Spawner) -> ! {
     // Spawn the clock synchronization task.
     clock::spawn(spawner, TimerGroup::new(per.TIMG1).timer0, per.WIFI, clock, rng);
     // Spawn the display task.
-    display::spawn(spawner, per.GPIO5, per.I2C0, per.GPIO3, per.GPIO4, clock, rng);
+    display::spawn(spawner, per.GPIO5, per.GPIO21, per.I2C0, per.GPIO3, per.GPIO4, clock, rng);
 
     // Main loop, just run async tasks.
     loop {

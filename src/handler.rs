@@ -43,5 +43,5 @@ pub(super) fn init() -> Peripherals {
     info!("Initialized the heap");
 
     // Initialize the microcontroller
-    esp_hal::init(Config::default().with_cpu_clock(CpuClock::_160MHz))
+    esp_hal::init(Config::default().with_cpu_clock(CpuClock::_80MHz))
 }

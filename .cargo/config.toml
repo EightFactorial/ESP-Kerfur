@@ -28,7 +28,7 @@ NTP_SERVER = "pool.ntp.org"
 TIMEZONE = "America/Los_Angeles"
 
 [target.riscv32imc-unknown-none-elf]
-runner = "espflash flash --baud 1152000 --monitor"
+runner = "espflash flash --monitor"
 
 [target.riscv32imac-unknown-none-elf]
-runner = "espflash flash --baud 1152000 --monitor"
+runner = "espflash flash --monitor"

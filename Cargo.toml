@@ -1,11 +1,11 @@
 [package]
 authors = ["EightFactorial"]
 edition = "2024"
-include = ["/src/**", "Cargo.toml"]
+include = ["/assets/**", "/src/**", "Cargo.toml"]
 license = "MIT OR Apache-2.0"
 name = "esp-kerfur"
 readme = "README.md"
-rust-version = "1.88.0"
+rust-version = "1.90.0"
 version = "0.1.0"
 
 [lints.rust]
@@ -57,59 +57,45 @@ strip = "debuginfo"
 
 [dependencies]
 # Embassy/Embedded
-embassy-embedded-hal = { features = ["defmt"], version = "=0.3.0" }
-embassy-executor = { features = ["defmt", "task-arena-size-81920"], version = "0.7" }
-embassy-net = { features = ["defmt", "dhcpv4", "dns", "proto-ipv4", "udp"], version = "0.7" }
+embassy-embedded-hal = { features = ["defmt"], version = "=0.3.2" }
+embassy-executor = { features = ["defmt", "task-arena-size-81920"], version = "=0.7.0" }
+embassy-net = { features = ["defmt", "dhcpv4", "dns", "proto-ipv4", "udp"], version = "=0.7.1" }
 embassy-sync = { features = ["defmt"], version = "=0.6.2" }
-embassy-time = { features = ["defmt", "defmt-timestamp-uptime-ms"], version = "0.4" }
-embedded-graphics = { features = ["defmt"], version = "0.8" }
+embassy-time = { features = ["defmt", "defmt-timestamp-uptime-ms"], version = "=0.4.0" }
+embedded-graphics = { features = ["defmt"], version = "=0.8.1" }
 embedded-hal = { version = "=0.2.7" }
 # Espressif
-esp-alloc = { features = ["nightly"], version = "0.8" }
-esp-backtrace = { features = ["exception-handler", "panic-handler", "println"], version = "0.17" }
-esp-bootloader-esp-idf = { features = ["esp-rom-sys", "log-04"], version = "0.2" }
+esp-alloc = { features = ["nightly"], version = "0.8.0" }
+esp-backtrace = { features = ["exception-handler", "panic-handler", "println"], version = "0.17.0" }
+esp-bootloader-esp-idf = { features = ["esp-rom-sys", "log-04"], version = "0.2.0" }
 esp-hal = { features = ["rt", "unstable"], version = "1.0.0-rc.0" }
-esp-hal-embassy = { version = "0.9" }
-esp-println = { features = ["defmt-espflash", "log-04"], version = "0.15" }
-esp-wifi = { features = ["builtin-scheduler", "coex", "wifi"], version = "0.15" }
+esp-hal-embassy = { version = "0.9.0" }
+esp-println = { features = ["defmt-espflash", "log-04"], version = "0.15.0" }
+esp-wifi = { features = ["builtin-scheduler", "coex", "wifi"], version = "0.15.0" }
 
 # Peripherals
-sh1106 = { features = ["graphics"], version = "0.5" }
+sh1106 = { features = ["graphics"], version = "0.5.0" }
 
 # Other
 chrono = { default-features = false, features = ["alloc"], version = "0.4" }
 chrono-tz = { default-features = false, version = "0.10" }
 defmt = { features = ["alloc", "ip_in_core"], version = "1.0" }
 futures-lite = { default-features = false, features = ["alloc"], version = "2.6" }
-heapless = { features = ["defmt-03"], version = "0.8" }
+heapless = { features = ["defmt-03"], version = "=0.8" }
 log = { features = ["release_max_level_debug"], version = "0.4" }
-sntpc = { default-features = false, features = ["embassy-socket", "log"], version = "0.5" }
+sntpc = { default-features = false, features = ["embassy-socket", "log"], version = "0.6" }
 static_cell = { features = ["nightly"], version = "2.1" }
 tinybmp = "0.6"
 
 [features]
-default = []
+default = ["esp32c3"]
 
 logging = ["esp-alloc/defmt", "esp-hal/log-04", "esp-wifi/log-04", "esp-wifi/sys-logs"]
 
 # Configure dependencies for ESP32-S2
 # Note: Remember to change the target in `.cargo/config.toml`
-esp32c3 = [
-  "esp-backtrace/esp32c3",
-  "esp-bootloader-esp-idf/esp32c3",
-  "esp-hal-embassy/esp32c3",
-  "esp-hal/esp32c3",
-  "esp-println/esp32c3",
-  "esp-wifi/esp32c3",
-]
+esp32c3 = ["esp-backtrace/esp32c3", "esp-bootloader-esp-idf/esp32c3", "esp-hal-embassy/esp32c3", "esp-hal/esp32c3", "esp-println/esp32c3", "esp-wifi/esp32c3"]
 
 # Configure dependencies for ESP32-C6
 # Note: Remember to change the target in `.cargo/config.toml`
-esp32c6 = [
-  "esp-backtrace/esp32c6",
-  "esp-bootloader-esp-idf/esp32c6",
-  "esp-hal-embassy/esp32c6",
-  "esp-hal/esp32c6",
-  "esp-println/esp32c6",
-  "esp-wifi/esp32c6",
-]
+esp32c6 = ["esp-backtrace/esp32c6", "esp-bootloader-esp-idf/esp32c6", "esp-hal-embassy/esp32c6", "esp-hal/esp32c6", "esp-println/esp32c6", "esp-wifi/esp32c6"]
