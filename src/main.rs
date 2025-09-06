@@ -30,17 +30,22 @@ async fn main(spawner: Spawner) -> ! {
     // Create a display and draw the confused screen.
     let mut display = KerfDisplay::new(per.I2C0, per.GPIO3, per.GPIO4);
     if let Err(err) = display.init().and_then(|()| KerfEmote::Confused.draw(&mut display)) {
-        error!("Failed to draw startup emote: {err}");
+        error!("Failed to initialize display and draw: {err}");
     }
 
     // Create an RNG source and clock.
     let rand = Rng::new(per.RNG);
     let clock = KerfClock::new();
 
-    // Connect to WiFi and synchronize the clock.
-    let timer = TimerGroup::new(per.TIMG1);
-    if let Ok(wifi) = KerfWifi::new(per.WIFI, timer.timer0, rand, spawner).await {
-        clock.synchronize(wifi, spawner);
+    // Connect to WiFi and synchronize the clock,
+    // if the time was not provided at compile time.
+    if env!("BOOT_TIME").is_empty() {
+        let timer = TimerGroup::new(per.TIMG1);
+        if let Ok(wifi) = KerfWifi::new(per.WIFI, timer.timer0, rand, spawner).await {
+            clock.synchronize(wifi, spawner);
+        }
+    } else {
+        info!("Skipping clock synchronization, using compile-time timestamp");
     }
 
     // Create audio output and touch sensor.
@@ -48,7 +53,7 @@ async fn main(spawner: Spawner) -> ! {
     let touch = KerfTouch::new(per.GPIO5);
 
     // And finally start the display manager.
-    Kerfur::new(audio, clock, display, touch, rand).execute().await
+    Kerfur::new(audio, clock, display, touch, rand).execute(spawner).await
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -70,6 +75,15 @@ pub struct Kerfur {
     rand: Rng,
 }
 
+/// An action that occurred, either a blink or a touch.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum KerfAction {
+    /// Blink
+    Blink,
+    /// Touch
+    Touch,
+}
+
 impl Kerfur {
     /// Create a new [`KerfDisplay`].
     #[must_use]
@@ -84,10 +98,12 @@ impl Kerfur {
     }
 
     /// Wrap the main execution loop, restarting on error.
-    pub async fn execute(mut self) -> ! {
+    pub async fn execute(mut self, spawner: Spawner) -> ! {
+        info!("Starting Display Manager...");
+
         loop {
-            let Err(err) = self.execute_inner().await;
-            error!("Display Manager encountered an error: {err}");
+            let Err(err) = self.execute_inner(&spawner).await;
+            error!("Display Manager encountered an error: {err:?}");
             Timer::after_secs(10).await;
             info!("Restarting Display Manager...");
         }
@@ -96,13 +112,25 @@ impl Kerfur {
     // ----------------------------------------------------------------------------------------------
 
     /// The main execution loop, handling all display updates and interactions.
-    async fn execute_inner(&mut self) -> Result<!, I2cError> {
+    async fn execute_inner(&mut self, _spawner: &Spawner) -> Result<!, KerfError> {
+        const ALARM_ENABLE: bool = env!("ALARM_ENABLE").eq_ignore_ascii_case("true");
+        const ALARM_HOUR: u32 = match u32::from_str_radix(env!("ALARM_HOUR"), 10) {
+            Ok(hour) if hour < 24 => hour,
+            Ok(..) => panic!("ALARM_HOUR must be between 0 and 23"),
+            Err(..) => 0,
+        };
+        const ALARM_MINUTE: u32 = match u32::from_str_radix(env!("ALARM_MINUTE"), 10) {
+            Ok(minute) if minute < 60 => minute,
+            Ok(..) => panic!("ALARM_MINUTE must be between 0 and 59"),
+            Err(..) => 0,
+        };
+
         loop {
             // Reset to the neutral emote.
             KerfEmote::Neutral.draw(&mut self.display)?;
 
             // Wait for either a blink or a touch.
-            match future::or(
+            match future::or::<KerfAction, _, _>(
                 Kerfur::wait_for_blink(&mut self.rand),
                 Kerfur::wait_for_touch(&mut self.touch),
             )
@@ -116,6 +144,13 @@ impl Kerfur {
                 // Wait for the touch to be released, then draw the `Meow` emote.
                 KerfAction::Touch => {
                     self.touch.wait_for_release().await;
+
+                    // Skip meowing if in silent mode.
+                    if !self.clock.in_silent_mode().await {
+                        self.audio.meow().await;
+                    }
+
+                    Timer::after_millis(150).await;
                     KerfEmote::Meow.draw(&mut self.display)?;
                     Timer::after_millis(650).await;
                 }
@@ -146,11 +181,13 @@ impl Kerfur {
     }
 }
 
-/// An action that occurred, either a blink or a touch.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum KerfAction {
-    /// Blink
-    Blink,
-    /// Touch
-    Touch,
+// -------------------------------------------------------------------------------------------------
+
+#[derive(Debug)]
+pub enum KerfError {
+    I2c(I2cError),
+}
+
+impl From<I2cError> for KerfError {
+    fn from(err: I2cError) -> Self { Self::I2c(err) }
 }

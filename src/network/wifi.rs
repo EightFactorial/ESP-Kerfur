@@ -206,7 +206,7 @@ async fn connection_task(mut controller: WifiController<'static>) {
                 // If signaled to stop, disconnect from the network
                 info!("Disconnecting from WiFi network");
                 if let Err(err) = controller.disconnect_async().await {
-                    error!("Failed to disconnect from WiFi network: {err:?}");
+                    error!("Failed to disconnect from WiFi: {err:?}");
                 }
 
                 // Send a stop signal to the network task
@@ -216,7 +216,7 @@ async fn connection_task(mut controller: WifiController<'static>) {
                 return;
             }
             Err(err) => {
-                error!("Failed to connect to WiFi network: {err:?}");
+                error!("Failed to connect to WiFi: {err:?}");
 
                 // After failed to connect too many times, rescan for the network.
                 attempts += 1;

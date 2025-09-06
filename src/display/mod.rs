@@ -3,7 +3,7 @@
 use core::ops::{Deref, DerefMut};
 
 use esp_hal::{
-    Blocking, DriverMode,
+    Async, DriverMode,
     gpio::interconnect::PeripheralOutput,
     i2c::master::{Config, Error as I2cError, I2c, Instance as I2cInstance},
     time::Rate,
@@ -25,7 +25,7 @@ pub use touch::KerfTouch;
 /// Kerfur's display that is drawn to.
 pub struct KerfDisplay {
     /// The underlying display driver.
-    display: GraphicsMode<I2cInterface<I2cWrapper<'static, Blocking>>>,
+    display: GraphicsMode<I2cInterface<I2cWrapper<'static, Async>>>,
 }
 
 impl KerfDisplay {
@@ -45,7 +45,7 @@ impl KerfDisplay {
             I2c::new(i2c, config).expect("Failed to configure I2C").with_sda(sda).with_scl(scl);
         Self {
             display: GraphicsMode::new(DisplayProperties::new(
-                I2cInterface::new(I2cWrapper(iface), 0x3C),
+                I2cInterface::new(I2cWrapper(iface.into_async()), 0x3C),
                 DisplaySize::Display128x64,
                 DisplayRotation::Rotate180,
             )),
@@ -62,7 +62,7 @@ impl KerfDisplay {
 }
 
 impl Deref for KerfDisplay {
-    type Target = GraphicsMode<I2cInterface<I2cWrapper<'static, Blocking>>>;
+    type Target = GraphicsMode<I2cInterface<I2cWrapper<'static, Async>>>;
 
     fn deref(&self) -> &Self::Target { &self.display }
 }

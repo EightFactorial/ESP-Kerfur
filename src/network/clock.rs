@@ -2,7 +2,7 @@
 
 use core::{num::IntErrorKind, ops::Deref};
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Timelike, Utc};
 use chrono_tz::Tz;
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::NoopRawMutex, lazy_lock::LazyLock, mutex::Mutex};
@@ -34,6 +34,25 @@ impl KerfClock {
             .unwrap_or_else(|| unreachable!("It is impossible for the timestamp to be invalid"));
         // Add the timezone.
         utc.with_timezone(&inner.timezone)
+    }
+
+    /// Returns `true` if Kerfus is in "silent mode".
+    #[must_use]
+    pub async fn in_silent_mode(&self) -> bool {
+        const SILENT_MODE_START: u32 = match u32::from_str_radix(env!("SILENT_MODE_START"), 10) {
+            Ok(hour) if hour < 24 => hour,
+            Ok(..) => panic!("SILENT_MODE_START must be between 0 and 23"),
+            Err(..) => 0,
+        };
+        const SILENT_MODE_END: u32 = match u32::from_str_radix(env!("SILENT_MODE_END"), 10) {
+            Ok(hour) if hour < 24 => hour,
+            Ok(..) => panic!("SILENT_MODE_END must be between 0 and 23"),
+            Err(..) => 0,
+        };
+
+        let now = self.now().await;
+
+        now.hour() >= SILENT_MODE_START || now.hour() < SILENT_MODE_END
     }
 
     /// Synchronize the clock using NTP.

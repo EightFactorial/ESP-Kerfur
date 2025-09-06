@@ -27,6 +27,15 @@ NTP_SERVER = "pool.ntp.org"
 # The timezone
 TIMEZONE = "America/Los_Angeles"
 
+# The hour and minute to set the alarm for (24-hour format).
+ALARM_ENABLE = "false"
+ALARM_HOUR = "7"
+ALARM_MINUTE = "30"
+# The hours between which the clock will be silent when touched.
+# Note: This will not stop the alarm, if enabled.
+SILENT_MODE_START = "22"
+SILENT_MODE_END = "6"
+
 [target.riscv32imc-unknown-none-elf]
 runner = "espflash flash --monitor"
 
