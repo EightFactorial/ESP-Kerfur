@@ -1,10 +1,3 @@
-[build]
-rustflags = ["-Cforce-frame-pointers", "-Clink-arg=-Tdefmt.x", "-Clink-arg=-Tlinkall.x"]
-# Uncomment to build for ESP32-C3
-target = "riscv32imc-unknown-none-elf"
-# Uncomment to build for ESP32-C6
-# target = "riscv32imac-unknown-none-elf"
-
 [env]
 # The log level
 ESP_LOG = "info"
@@ -15,22 +8,22 @@ ESP_WIFI_CONFIG_SCAN_METHOD = "0"
 
 # The WiFi SSID, auth method, and password
 # Note: See `src/network/wifi.rs:230` for supported auth methods
-WIFI_SSID = "HomeNetwork"
+WIFI_SSID        = "HomeNetwork"
 WIFI_AUTH_METHOD = "WPAWPA2Personal"
-WIFI_PASSWORD = "hunter2"
+WIFI_PASSWORD    = "hunter2"
 
-# The default time to use before syncing with NTP
-# Useful for development, set using `BOOT_TIME=$(date +%s)`
+# The time to use instead of using NTP to set the clock.
+# Useful for development, set using `BOOT_TIME=$(date +%s) cargo run ...`
 BOOT_TIME = ""
 
-# The NTP server and timezone to use
-# Note: Accepts both IP addresses and domain names
+# The NTP server and timezone to use.
+# Note: Accepts both IP addresses and domain names.
 NTP_SERVER = "pool.ntp.org"
 TIMEZONE   = "America/Los_Angeles"
 
 # The hour and minute to set the alarm for (24-hour format).
 ALARM_ENABLE   = "true"                        # Enabled
-ALARM_WEEKDAYS = "SUN,MON,TUE,WED,THU,FRI,SAT" # All weekdays
+ALARM_WEEKDAYS = "SUN,MON,TUE,WED,THU,FRI,SAT" # Every day
 ALARM_HOUR     = "06"                          # 06:00 AM
 ALARM_MINUTE   = "00"
 
@@ -38,6 +31,13 @@ ALARM_MINUTE   = "00"
 # Note: This will not stop the alarm, if enabled.
 SILENT_MODE_END   = "06" # 06:00 AM
 SILENT_MODE_START = "22" # 10:00 PM
+
+[build]
+rustflags = ["-Cforce-frame-pointers", "-Clink-arg=-Tdefmt.x", "-Clink-arg=-Tlinkall.x"]
+# Uncomment to build for ESP32-C3
+target = "riscv32imc-unknown-none-elf"
+# Uncomment to build for ESP32-C6
+# target = "riscv32imac-unknown-none-elf"
 
 [target.riscv32imc-unknown-none-elf]
 runner = "espflash flash --monitor"

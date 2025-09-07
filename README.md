@@ -16,7 +16,7 @@ A Kerfus in the palm of your hand!
 
 ## Configuration
 
-See [Config.toml](.cargo/config.toml) for all configuration options.
+See [config.toml](.cargo/config.toml) for all configuration options.
 
 You can override these either by editing the file directly or by setting environment variables.
 
