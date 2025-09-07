@@ -27,7 +27,7 @@ impl KerfAudio {
     /// Trigger a meow sound effect to start playing.
     pub async fn meow(&mut self) {
         self.trigger.set_low();
-        Timer::after_millis(100).await;
+        Timer::after_millis(500).await;
         self.trigger.set_high();
     }
 }

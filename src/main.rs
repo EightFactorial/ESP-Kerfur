@@ -126,15 +126,16 @@ impl Kerfur {
                 let mut reset = false;
                 while !reset {
                     self.audio.meow().await;
+                    reset |= self.touch.is_touched();
                     Timer::after_millis(175).await;
                     reset |= self.touch.is_touched();
 
                     KerfEmote::Meow.draw(&mut self.display)?;
-                    Timer::after_millis(650).await;
+                    reset |= self.touch.is_touched();
+                    Timer::after_millis(825).await;
                     reset |= self.touch.is_touched();
 
                     KerfEmote::Neutral.draw(&mut self.display)?;
-                    Timer::after_millis(175).await;
                     reset |= self.touch.is_touched();
                 }
             }
@@ -153,8 +154,6 @@ impl Kerfur {
                 }
                 // Wait for the touch to be released, then meow and draw the `Meow` emote.
                 KerfAction::Touch => {
-                    self.touch.wait_for_release().await;
-
                     // Skip meowing if in silent mode.
                     if !self.clock.in_silent_mode().await {
                         self.audio.meow().await;
@@ -162,9 +161,9 @@ impl Kerfur {
                     }
 
                     KerfEmote::Meow.draw(&mut self.display)?;
-                    Timer::after_millis(725).await;
+                    Timer::after_millis(825).await;
                 }
-                // Draw the current time on the display.
+                // Draw the current time on the display while touch is held.
                 KerfAction::Clock => {
                     self.clock.draw(&mut self.display).await?;
                     self.touch.wait_for_release().await;

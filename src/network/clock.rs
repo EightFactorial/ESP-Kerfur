@@ -4,7 +4,6 @@ use core::{
     fmt::Write,
     num::IntErrorKind,
     ops::Deref,
-    str::FromStr,
     sync::atomic::{AtomicU32, Ordering},
 };
 
@@ -92,7 +91,7 @@ impl KerfClock {
         static ALARM_WEEKDAYS: LazyLock<WeekdaySet> = LazyLock::new(|| {
             let mut set = WeekdaySet::EMPTY;
             for day in env!("ALARM_WEEKDAYS").split(',') {
-                match Weekday::from_str(day) {
+                match day.parse::<Weekday>() {
                     Ok(weekday) => {
                         set.insert(weekday);
                     }
@@ -220,41 +219,40 @@ pub struct KerfClockInner {
 }
 
 impl KerfClockInner {
-    /// The boot time in seconds since the epoch.
-    ///
-    /// Useful for testing to skip the NTP synchronization step.
-    const BOOT_TIME: u64 = match u64::from_str_radix(env!("BOOT_TIME"), 10) {
-        Ok(time) => time,
-        Err(err) if matches!(err.kind(), IntErrorKind::Empty | IntErrorKind::Zero) => 0,
-        Err(..) => panic!("Invalid `BOOT_TIME` environment variable, must be empty or a valid u64"),
-    };
-    /// The provided timezone.
-    ///
-    /// If none is provided it is assumed to be UTC.
-    const TIMEZONE: Option<&str> = option_env!("TIMEZONE");
-
     /// Get a reference to the single instance of a [`KerfClockInner`].
     #[must_use]
     fn get() -> &'static Mutex<NoopRawMutex, KerfClockInner> {
+        /// The boot time in seconds since the epoch.
+        ///
+        /// Useful for testing to skip the NTP synchronization step.
+        const BOOT_TIME: u64 = match u64::from_str_radix(env!("BOOT_TIME"), 10) {
+            Ok(time) => time,
+            Err(err) if matches!(err.kind(), IntErrorKind::Empty | IntErrorKind::Zero) => 0,
+            Err(..) => {
+                panic!("Invalid `BOOT_TIME` environment variable, must be empty or a valid u64")
+            }
+        };
+        /// The provided timezone.
+        ///
+        /// If none is provided it is assumed to be UTC.
+        const TIMEZONE: Option<&str> = option_env!("TIMEZONE");
+
         static INSTANCE: LazyLock<Mutex<NoopRawMutex, KerfClockInner>> = LazyLock::new(|| {
-            Mutex::new(if let Some(offset) = KerfClockInner::TIMEZONE {
+            Mutex::new(if let Some(offset) = TIMEZONE {
                 // If provided a timezone, attempt to parse it.
                 match offset.parse::<Tz>() {
                     Ok(timezone) => {
                         info!("Using timezone: {timezone}");
-                        KerfClockInner { boot_timestamp: KerfClockInner::BOOT_TIME, timezone }
+                        KerfClockInner { boot_timestamp: BOOT_TIME, timezone }
                     }
                     Err(err) => {
                         error!("Failed to parse timezone: {err}, using UTC instead");
-                        KerfClockInner {
-                            boot_timestamp: KerfClockInner::BOOT_TIME,
-                            timezone: Tz::UTC,
-                        }
+                        KerfClockInner { boot_timestamp: BOOT_TIME, timezone: Tz::UTC }
                     }
                 }
             } else {
                 // Otherwise default to UTC.
-                KerfClockInner { boot_timestamp: KerfClockInner::BOOT_TIME, timezone: Tz::UTC }
+                KerfClockInner { boot_timestamp: BOOT_TIME, timezone: Tz::UTC }
             })
         });
 
