@@ -1,5 +1,4 @@
 //! TODO
-#![expect(dead_code, reason = "Work in progress rewrite")]
 #![feature(never_type, type_alias_impl_trait)]
 #![no_main]
 #![no_std]
@@ -8,7 +7,7 @@ use embassy_executor::Spawner;
 use embassy_time::Timer;
 use esp_hal::{i2c::master::Error as I2cError, rng::Rng, timer::timg::TimerGroup};
 use futures_lite::future;
-use log::{error, info};
+use log::{error, info, warn};
 
 mod init;
 
@@ -64,24 +63,26 @@ async fn main(spawner: Spawner) -> ! {
 pub struct Kerfur {
     /// The audio output to use.
     audio: KerfAudio,
-    /// The clock to use for timekeeping.
+    /// The clock used for timekeeping.
     clock: KerfClock,
-    /// The display to render to.
+    /// The display to draw emotes to.
     display: KerfDisplay,
-    /// The touch sensor to detect touches.
+    /// The touch sensor used to detect touches.
     touch: KerfTouch,
 
     /// A source of randomness.
     rand: Rng,
 }
 
-/// An action that occurred, either a blink or a touch.
+/// An action that should occur.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum KerfAction {
     /// Blink
     Blink,
     /// Touch
     Touch,
+    /// Clock
+    Clock,
 }
 
 impl Kerfur {
@@ -99,13 +100,14 @@ impl Kerfur {
 
     /// Wrap the main execution loop, restarting on error.
     pub async fn execute(mut self, spawner: Spawner) -> ! {
-        info!("Starting Display Manager...");
+        info!("Starting Display Manager");
 
         loop {
             let Err(err) = self.execute_inner(&spawner).await;
             error!("Display Manager encountered an error: {err:?}");
+
             Timer::after_secs(10).await;
-            info!("Restarting Display Manager...");
+            warn!("Restarting Display Manager...");
         }
     }
 
@@ -113,23 +115,31 @@ impl Kerfur {
 
     /// The main execution loop, handling all display updates and interactions.
     async fn execute_inner(&mut self, _spawner: &Spawner) -> Result<!, KerfError> {
-        const ALARM_ENABLE: bool = env!("ALARM_ENABLE").eq_ignore_ascii_case("true");
-        const ALARM_HOUR: u32 = match u32::from_str_radix(env!("ALARM_HOUR"), 10) {
-            Ok(hour) if hour < 24 => hour,
-            Ok(..) => panic!("ALARM_HOUR must be between 0 and 23"),
-            Err(..) => 0,
-        };
-        const ALARM_MINUTE: u32 = match u32::from_str_radix(env!("ALARM_MINUTE"), 10) {
-            Ok(minute) if minute < 60 => minute,
-            Ok(..) => panic!("ALARM_MINUTE must be between 0 and 59"),
-            Err(..) => 0,
-        };
-
         loop {
             // Reset to the neutral emote.
             KerfEmote::Neutral.draw(&mut self.display)?;
 
-            // Wait for either a blink or a touch.
+            // If the alarm is tripped, meow until touched.
+            if self.clock.is_alarm_tripped().await {
+                info!("Alarm tripped at {}!", self.clock.now().await);
+
+                let mut reset = false;
+                while !reset {
+                    self.audio.meow().await;
+                    Timer::after_millis(175).await;
+                    reset |= self.touch.is_touched();
+
+                    KerfEmote::Meow.draw(&mut self.display)?;
+                    Timer::after_millis(650).await;
+                    reset |= self.touch.is_touched();
+
+                    KerfEmote::Neutral.draw(&mut self.display)?;
+                    Timer::after_millis(175).await;
+                    reset |= self.touch.is_touched();
+                }
+            }
+
+            // Wait for either a blink or a touch action.
             match future::or::<KerfAction, _, _>(
                 Kerfur::wait_for_blink(&mut self.rand),
                 Kerfur::wait_for_touch(&mut self.touch),
@@ -141,18 +151,24 @@ impl Kerfur {
                     KerfEmote::Blink.draw(&mut self.display)?;
                     Timer::after_millis(100).await;
                 }
-                // Wait for the touch to be released, then draw the `Meow` emote.
+                // Wait for the touch to be released, then meow and draw the `Meow` emote.
                 KerfAction::Touch => {
                     self.touch.wait_for_release().await;
 
                     // Skip meowing if in silent mode.
                     if !self.clock.in_silent_mode().await {
                         self.audio.meow().await;
+                        Timer::after_millis(175).await;
                     }
 
-                    Timer::after_millis(150).await;
                     KerfEmote::Meow.draw(&mut self.display)?;
-                    Timer::after_millis(650).await;
+                    Timer::after_millis(725).await;
+                }
+                // Draw the current time on the display.
+                KerfAction::Clock => {
+                    self.clock.draw(&mut self.display).await?;
+                    self.touch.wait_for_release().await;
+                    Timer::after_secs(5).await;
                 }
             }
         }
@@ -177,7 +193,19 @@ impl Kerfur {
     async fn wait_for_touch(touch: &mut KerfTouch) -> KerfAction {
         touch.wait_for_touch().await;
 
-        KerfAction::Touch
+        future::or::<KerfAction, _, _>(
+            // If the touch is released, return `Touch`.
+            async {
+                touch.wait_for_release().await;
+                KerfAction::Touch
+            },
+            // If the touch is held for 3 seconds, return `Clock`.
+            async {
+                Timer::after_secs(3).await;
+                KerfAction::Clock
+            },
+        )
+        .await
     }
 }
 

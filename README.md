@@ -2,7 +2,23 @@
 
 ## About
 
-TODO
+A Kerfus in the palm of your hand!
+
+## Project Goals
+
+- [x] Alarm Clock
+  - [x] Time Sync via NTP
+- [x] Configuration via `config.toml`
+- [ ] Fully Documented
+  - [x] Code
+  - [ ] Designs
+- [ ] Pretty README.md
+
+## Configuration
+
+See [Config.toml](.cargo/config.toml) for all configuration options.
+
+You can override these either by editing the file directly or by setting environment variables.
 
 ## License
 

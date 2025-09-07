@@ -1,9 +1,18 @@
 //! TODO
 
+use core::{
+    net::{IpAddr, SocketAddr},
+    str::FromStr,
+};
+
 use embassy_executor::Spawner;
-use embassy_net::{Config as WifiConfig, DhcpConfig, Runner, Stack, StackResources};
+use embassy_net::{
+    Config as WifiConfig, DhcpConfig, IpAddress, Runner, Stack, StackResources,
+    dns::DnsQueryType,
+    udp::{PacketMetadata, UdpSocket},
+};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
-use embassy_time::Timer;
+use embassy_time::{Duration, Instant, Timer, with_timeout};
 use esp_hal::{peripherals::WIFI, rng::Rng};
 use esp_wifi::{
     EspWifiTimerSource,
@@ -13,7 +22,9 @@ use esp_wifi::{
         WifiEvent, WifiState, wifi_state,
     },
 };
+use heapless::Vec;
 use log::{debug, error, info, warn};
+use sntpc::NtpContext;
 use static_cell::make_static;
 
 /// TODO
@@ -80,6 +91,120 @@ impl KerfWifi {
         // Return the initialized WiFi stack.
         Ok(Self { stack })
     }
+
+    /// Resolve a hostname to an IPv4 address using DNS.
+    ///
+    /// Returns `None` if the resolution fails.
+    pub async fn resolve(&self, addr: &str) -> Option<IpAddress> {
+        let mut attempt = 0u32;
+
+        while attempt < 3 {
+            info!("Resolving hostname: \"{addr}\"");
+
+            match with_timeout(Duration::from_secs(10), self.stack.dns_query(addr, DnsQueryType::A))
+                .await
+            {
+                Ok(Ok(addrs)) => return Some(addrs[0]),
+                Ok(Err(err)) => {
+                    error!("DNS query failed: {err:?}, retrying...");
+                    attempt += 1;
+                }
+                Err(..) => warn!("DNS query timed out, retrying..."),
+            }
+
+            Timer::after_secs(15).await;
+        }
+
+        None
+    }
+
+    /// Perform an NTP query and return the result.
+    ///
+    /// Returns `None` if the query fails.
+    pub async fn ntp(&self) -> Option<sntpc::NtpResult> {
+        /// The NTP server to use for time synchronization.
+        ///
+        /// If none is provided `pool.ntp.org` is used by default.
+        const NTP_SERVER: &str = env!("NTP_SERVER");
+
+        // Create UDP socket for NTP requests.
+        let mut rx_meta = [PacketMetadata::EMPTY; 24];
+        let mut rx_buffer = [0; 6144];
+        let mut tx_meta = [PacketMetadata::EMPTY; 24];
+        let mut tx_buffer = [0; 6144];
+
+        let mut socket = UdpSocket::new(
+            self.stack(),
+            &mut rx_meta,
+            &mut rx_buffer,
+            &mut tx_meta,
+            &mut tx_buffer,
+        );
+
+        // Bind to the NTP port.
+        socket.bind(123).expect("Failed to bind to NTP port!");
+
+        let mut addrs = Vec::<IpAddress, 4>::new();
+        let mut port = 123;
+
+        if let Ok(SocketAddr::V4(addr)) = SocketAddr::from_str(NTP_SERVER) {
+            // If `NTP_SERVER` is an IPv4 socket address, use it directly.
+            let _ = addrs.push(IpAddress::Ipv4(*addr.ip()));
+            port = addr.port();
+        } else if let Ok(IpAddr::V4(addr)) = IpAddr::from_str(NTP_SERVER) {
+            // If `NTP_SERVER` is an IPv4 address, use it directly.
+            let _ = addrs.push(IpAddress::from(addr));
+        } else {
+            // Otherwise, use DNS to attempt to resolve the hostname.
+            let mut server = NTP_SERVER;
+
+            loop {
+                if let Some(addr) = self.resolve(server).await {
+                    let _ = addrs.push(addr);
+                    break;
+                }
+
+                error!("Failed to resolve \"{server}\"");
+
+                if server == "pool.ntp.org" {
+                    return None;
+                }
+
+                warn!("Attempting again using \"pool.ntp.org\" instead");
+                server = "pool.ntp.org";
+            }
+        }
+
+        let context = NtpContext::new(NtpTimestamp);
+        let addr = SocketAddr::new(addrs[0].into(), port);
+
+        loop {
+            info!("Requesting time from NTP server");
+
+            match with_timeout(Duration::from_secs(10), sntpc::get_time(addr, &socket, context))
+                .await
+            {
+                Ok(Ok(time)) => return Some(time),
+                Ok(Err(err)) => error!("NTP query failed: {err:?}, retrying..."),
+                Err(..) => warn!("NTP query timed out, retrying..."),
+            }
+
+            Timer::after_secs(15).await;
+        }
+    }
+}
+
+/// An implementation of [`sntpc::NtpTimestampGenerator`]
+/// using [`embassy_time::Instant`].
+#[derive(Debug, Clone, Copy)]
+struct NtpTimestamp;
+
+impl sntpc::NtpTimestampGenerator for NtpTimestamp {
+    fn init(&mut self) {}
+
+    fn timestamp_sec(&self) -> u64 { Instant::now().as_secs() }
+
+    fn timestamp_subsec_micros(&self) -> u32 { (Instant::now().as_micros() % 1_000_000) as u32 }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -102,6 +227,12 @@ pub static STOP_CONNECTION_SIGNAL: Signal<CriticalSectionRawMutex, ()> = Signal:
 #[embassy_executor::task]
 async fn connection_task(mut controller: WifiController<'static>) {
     /// The WiFi authentication method to use.
+    ///
+    /// # WARNING
+    ///
+    /// THIS MUST MATCH THE AUTHENTICATION METHOD *EXACTLY*!
+    ///
+    /// DO NOT USE `WPA2Personal` IF YOUR NETWORK USES `WPAWPA2Personal`!
     const WIFI_AUTH_METHOD: AuthMethod = match env!("WIFI_AUTH_METHOD").as_bytes() {
         b"None" => AuthMethod::None,
         b"WEP" => AuthMethod::WEP,

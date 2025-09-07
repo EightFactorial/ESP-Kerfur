@@ -1,6 +1,5 @@
 //! [`KerfEmote`] and image display functionality.
 
-use defmt::Format;
 use embassy_sync::lazy_lock::LazyLock;
 use embedded_graphics::{image::Image, pixelcolor::BinaryColor, prelude::*};
 use esp_hal::i2c::master::Error as I2cError;
@@ -8,7 +7,7 @@ use sh1106::{Error as DisplayError, interface::DisplayInterface, mode::GraphicsM
 use tinybmp::Bmp;
 
 /// An emote that can be displayed on Kerfur's screen.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Format)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KerfEmote {
     /// The "neutral" emote.
     Neutral,

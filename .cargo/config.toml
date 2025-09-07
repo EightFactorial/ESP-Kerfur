@@ -6,35 +6,38 @@ target = "riscv32imc-unknown-none-elf"
 # target = "riscv32imac-unknown-none-elf"
 
 [env]
+# The log level
 ESP_LOG = "info"
-# Defaults to "CN"
+# Defaults to "CN" if not set
 ESP_WIFI_CONFIG_COUNTRY_CODE = "US"
 # 0 = "Fast Scan", 1 = "All Channels"
 ESP_WIFI_CONFIG_SCAN_METHOD = "0"
 
-# The Wi-Fi authentication method
-WIFI_AUTH_METHOD = "WPAWPA2Personal"
-# The password for the Wi-Fi network
-WIFI_PASSWORD = "hunter2"
-# The SSID of the Wi-Fi network to connect to
+# The WiFi SSID, auth method, and password
+# Note: See `src/network/wifi.rs:230` for supported auth methods
 WIFI_SSID = "HomeNetwork"
+WIFI_AUTH_METHOD = "WPAWPA2Personal"
+WIFI_PASSWORD = "hunter2"
 
 # The default time to use before syncing with NTP
 # Useful for development, set using `BOOT_TIME=$(date +%s)`
 BOOT_TIME = ""
-# The NTP server address
+
+# The NTP server and timezone to use
+# Note: Accepts both IP addresses and domain names
 NTP_SERVER = "pool.ntp.org"
-# The timezone
-TIMEZONE = "America/Los_Angeles"
+TIMEZONE   = "America/Los_Angeles"
 
 # The hour and minute to set the alarm for (24-hour format).
-ALARM_ENABLE = "false"
-ALARM_HOUR = "7"
-ALARM_MINUTE = "30"
+ALARM_ENABLE   = "true"                        # Enabled
+ALARM_WEEKDAYS = "SUN,MON,TUE,WED,THU,FRI,SAT" # All weekdays
+ALARM_HOUR     = "06"                          # 06:00 AM
+ALARM_MINUTE   = "00"
+
 # The hours between which the clock will be silent when touched.
 # Note: This will not stop the alarm, if enabled.
-SILENT_MODE_START = "22"
-SILENT_MODE_END = "6"
+SILENT_MODE_END   = "06" # 06:00 AM
+SILENT_MODE_START = "22" # 10:00 PM
 
 [target.riscv32imc-unknown-none-elf]
 runner = "espflash flash --monitor"

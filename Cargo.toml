@@ -22,12 +22,12 @@ strip = "debuginfo"
 
 [dependencies]
 # Embassy/Embedded
-embassy-embedded-hal = { features = ["defmt"], version = "=0.3.2" }
-embassy-executor = { features = ["defmt", "task-arena-size-81920"], version = "=0.7.0" }
-embassy-net = { features = ["defmt", "dhcpv4", "dns", "proto-ipv4", "udp"], version = "=0.7.1" }
-embassy-sync = { features = ["defmt"], version = "=0.6.2" }
-embassy-time = { features = ["defmt", "defmt-timestamp-uptime-ms"], version = "=0.4.0" }
-embedded-graphics = { features = ["defmt"], version = "=0.8.1" }
+embassy-embedded-hal = { version = "=0.3.2" }
+embassy-executor = { features = ["task-arena-size-81920"], version = "=0.7.0" }
+embassy-net = { features = ["dhcpv4", "dns", "proto-ipv4", "udp"], version = "=0.7.1" }
+embassy-sync = { version = "=0.6.2" }
+embassy-time = { version = "=0.4.0" }
+embedded-graphics = { version = "=0.8.1" }
 embedded-hal = { version = "=0.2.7" }
 # Espressif
 esp-alloc = { features = ["nightly"], version = "0.8.0" }
@@ -44,9 +44,8 @@ sh1106 = { features = ["graphics"], version = "0.5.0" }
 # Other
 chrono = { default-features = false, features = ["alloc"], version = "0.4" }
 chrono-tz = { default-features = false, version = "0.10" }
-defmt = { features = ["alloc", "ip_in_core"], version = "1.0" }
 futures-lite = { default-features = false, features = ["alloc"], version = "2.6" }
-heapless = { features = ["defmt-03"], version = "=0.8" }
+heapless = { version = "=0.8" }
 log = { features = ["release_max_level_debug"], version = "0.4" }
 sntpc = { default-features = false, features = ["embassy-socket", "log"], version = "0.6" }
 static_cell = { features = ["nightly"], version = "2.1" }
@@ -55,7 +54,7 @@ tinybmp = "0.6"
 [features]
 default = []
 
-logging = ["esp-alloc/defmt", "esp-hal/log-04", "esp-wifi/log-04", "esp-wifi/sys-logs"]
+logging = ["embassy-embedded-hal/defmt", "embassy-executor/defmt", "embassy-net/defmt", "embassy-sync/defmt", "embassy-time/defmt-timestamp-uptime-ms", "embedded-graphics/defmt", "esp-alloc/defmt", "esp-hal/log-04", "esp-println/defmt-espflash", "esp-wifi/log-04", "esp-wifi/sys-logs", "heapless/defmt-03"]
 
 # --- Lints ---
 
