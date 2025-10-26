@@ -1,0 +1,11 @@
+# Editor Settings
+/.vscode
+/.zed
+
+# Compiler Error Reports
+/rustc-ice-**.txt
+
+# Build Files
+/Cargo.lock
+/debug
+/target

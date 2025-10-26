@@ -1,0 +1,20 @@
+[package]
+name = "kurfur"
+edition = { workspace = true }
+include = { workspace = true }
+license = { workspace = true }
+readme = { workspace = true }
+rust-version = { workspace = true }
+version = { workspace = true }
+
+[lints]
+workspace = true
+
+[dependencies]
+embassy-executor = { workspace = true }
+embassy-time = { workspace = true }
+esp-alloc = { workspace = true }
+esp-backtrace = { workspace = true }
+esp-rtos = { workspace = true }
+esp-hal = { workspace = true }
+esp-println = { workspace = true }

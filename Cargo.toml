@@ -1,0 +1,116 @@
+# --- Build Settings ---
+
+[profile.release]
+codegen-units = 1
+incremental = false
+lto = "fat"
+opt-level = "s"
+strip = "debuginfo"
+
+# --- Workspace Dependencies ---
+
+[workspace.dependencies]
+# Workspace
+kerfur-emote = { path = "crates/kerfur-emote", version = "0.0.1" }
+
+# Embassy/Embedded
+embassy-executor = { version = "0.9.0", features = ["defmt"] }
+embassy-time = { version = "0.5.0", features = ["defmt", "defmt-timestamp-uptime-ms"] }
+# Espressif
+esp-alloc = { version = "0.9.0", features = ["defmt", "esp32s3"] }
+esp-backtrace = { version = "0.18.0", features = ["defmt", "halt-cores", "panic-handler", "esp32s3"] }
+esp-rtos = { version = "0.2.0", features = ["defmt", "embassy", "esp-radio", "esp32s3"] }
+esp-hal = { version = "1.0.0", features = ["unstable", "esp32s3"] }
+esp-println = { version = "0.16.0", features = ["defmt-espflash", "esp32s3"] }
+
+# --- Workspace Settings ---
+
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+include = ["/assets/**", "/src/**", "Cargo.toml"]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+rust-version = "1.90.0"
+version = "0.0.1"
+
+[workspace.lints.rust]
+explicit_builtin_cfgs_in_flags = "allow"
+incomplete_features = "allow"
+missing_docs = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+unreachable_pub = "warn"
+unused_import_braces = "warn"
+unused_lifetimes = "warn"
+
+[workspace.lints.rustdoc]
+bare_urls = "deny"
+broken_intra_doc_links = "deny"
+invalid_codeblock_attributes = "deny"
+invalid_html_tags = "deny"
+invalid_rust_codeblocks = "deny"
+private_intra_doc_links = "deny"
+
+[workspace.lints.clippy]
+allow_attributes_without_reason = "deny"
+cast_possible_truncation = "warn"
+cast_possible_wrap = "warn"
+clone_on_ref_ptr = "warn"
+doc_markdown = "allow"
+module_name_repetitions = "allow"
+needless_pass_by_value = "allow"
+pedantic = { level = "warn", priority = -1 }
+unnecessary_cast = "warn"
+
+# --- Git Cliff ---
+
+[workspace.metadata.git-cliff.changelog]
+body = """
+{% if version %}\
+    ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+    ## [unreleased]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim | upper_first }}
+    {% for commit in commits %}
+        - {% if commit.scope %}*({{ commit.scope }})* {% endif %}\
+            {% if commit.breaking %}[**breaking**] {% endif %}\
+            {{ commit.message | upper_first }}\
+    {% endfor %}
+{% endfor %}
+"""
+postprocessors = []
+render_always = true
+trim = true
+
+[workspace.metadata.git-cliff.git]
+commit_parsers = [
+  { body = ".*security", group = "<!-- 8 -->🛡️ Security" },
+  { group = "<!-- 0 -->🚀 Features", message = "^feat" },
+  { group = "<!-- 1 -->🐛 Bug Fixes", message = "^fix" },
+  { group = "<!-- 2 -->🚜 Refactor", message = "^refactor" },
+  { group = "<!-- 3 -->📚 Documentation", message = "^doc" },
+  { group = "<!-- 4 -->⚡ Performance", message = "^perf" },
+  { group = "<!-- 5 -->🎨 Styling", message = "^style" },
+  { group = "<!-- 6 -->🧪 Testing", message = "^test" },
+  { group = "<!-- 7 -->◀️ Revert", message = "^revert" },
+  { message = "^chore|^ci", skip = true },
+]
+commit_preprocessors = []
+conventional_commits = true
+filter_commits = false
+filter_unconventional = true
+link_parsers = []
+protect_breaking_commits = false
+recurse_submodules = false
+require_conventional = false
+sort_commits = "oldest"
+split_commits = false
+topo_order = false
+topo_order_commits = true
+use_branch_tags = false

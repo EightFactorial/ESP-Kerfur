@@ -1,0 +1,13 @@
+[package]
+name = "kurfur-emote"
+edition = { workspace = true }
+include = { workspace = true }
+license = { workspace = true }
+readme = { workspace = true }
+rust-version = { workspace = true }
+version = { workspace = true }
+
+[lints]
+workspace = true
+
+[dependencies]

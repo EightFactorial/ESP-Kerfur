@@ -1,0 +1,44 @@
+[advisories]
+db-path = "~/.cargo/advisory-db"
+db-urls = ["https://github.com/rustsec/advisory-db"]
+ignore = ["RUSTSEC-2023-0071", "RUSTSEC-2025-0057"]
+version = 2
+
+[licenses]
+allow = ["Apache-2.0", "BSD-3-Clause", "MIT", "Unicode-3.0", "Zlib"]
+
+[bans]
+external-default-features = "allow"
+highlight = "all"
+multiple-versions = "warn"
+skip-tree = []
+wildcards = "deny"
+workspace-default-features = "deny"
+
+[bans.build]
+enable-builtin-globs = true
+executables = "deny"
+include-archives = true
+include-dependencies = true
+include-workspace = true
+interpreted = "warn"
+
+[bans.workspace-dependencies]
+duplicates = "deny"
+include-path-dependencies = false
+unused = "allow"
+
+[sources]
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+unknown-git = "deny"
+unknown-registry = "deny"
+
+# --- Feature Exceptions ---
+
+
+
+# --- Executable Exceptions ---
+
+
+
+# --- Duplicate Exceptions ---
