@@ -1,4 +1,7 @@
-use embedded_graphics::{prelude::*, primitives::Line};
+use embedded_graphics::{
+    prelude::*,
+    primitives::{Line, PrimitiveStyle, StyledDrawable},
+};
 
 use crate::{KerfurStyle, element::interp_line};
 
@@ -13,9 +16,25 @@ pub(super) struct WhiskerState {
 impl WhiskerState {
     pub(super) fn draw<D: DrawTargetExt>(
         &self,
-        _display: &mut D,
-        _style: &KerfurStyle<D::Color>,
+        display: &mut D,
+        style: &KerfurStyle<D::Color>,
     ) -> Result<(), D::Error> {
+        Self::draw_whisker(self.left, self.offset, self.count, display, &style.whisker)?;
+        Self::draw_whisker(self.right, self.offset, self.count, display, &style.whisker)?;
+        Ok(())
+    }
+
+    fn draw_whisker<D: DrawTargetExt>(
+        mut whisker: Line,
+        offset: Point,
+        count: u32,
+        display: &mut D,
+        style: &PrimitiveStyle<D::Color>,
+    ) -> Result<(), D::Error> {
+        for _ in 0..count {
+            whisker.draw_styled(style, display)?;
+            whisker.translate_mut(offset);
+        }
         Ok(())
     }
 

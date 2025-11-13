@@ -1,32 +1,54 @@
-use embedded_graphics::{prelude::*, primitives::Ellipse};
+use embedded_graphics::{
+    prelude::*,
+    primitives::{Circle, Line},
+};
 
 use crate::{KerfurElements, element::KerfurEyeType};
 
 /// A set of default Kerfur expressions.
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub enum KerfurEmote {
-    /// A dazed face
-    #[default]
-    Dazed,
     /// A neutral face
+    #[default]
     Neutral,
+    /// A meowing face
+    Meow,
+    /// A dazed face
+    Dazed,
 }
 
 impl KerfurEmote {
     /// The [`KerfurElements`] for the [`KerfurEmote::Dazed`] emote.
-    pub const DAZED: KerfurElements = KerfurElements::new();
-    /// The [`KerfurElements`] for the [`KerfurEmote::Neutral`] emote.
-    pub const NEUTRAL: KerfurElements = KerfurElements::new().with_eyes(
-        KerfurEyeType::Ellipse(Ellipse::with_center(Point::zero(), Size::zero())),
-        KerfurEyeType::Ellipse(Ellipse::with_center(Point::zero(), Size::zero())),
+    pub const DAZED: KerfurElements = KerfurElements::new().with_eyes(
+        KerfurEyeType::Swirl(Circle::with_center(Point::zero(), 8)),
+        KerfurEyeType::Swirl(Circle::with_center(Point::zero(), 8)),
     );
+    /// The [`KerfurElements`] for the [`KerfurEmote::Meow`] emote.
+    pub const MEOW: KerfurElements = KerfurElements::new()
+        .with_eyes(
+            KerfurEyeType::Arrow(
+                Line::new(Point::zero(), Point::zero()),
+                Line::new(Point::zero(), Point::zero()),
+            ),
+            KerfurEyeType::Arrow(
+                Line::new(Point::zero(), Point::zero()),
+                Line::new(Point::zero(), Point::zero()),
+            ),
+        )
+        .with_eyebrows(
+            Line::new(Point::zero(), Point::zero()),
+            Line::new(Point::zero(), Point::zero()),
+        );
+    /// The [`KerfurElements`] for the [`KerfurEmote::Neutral`] emote.
+    pub const NEUTRAL: KerfurElements = KerfurElements::new();
 }
 
 impl KerfurExpression for KerfurEmote {
     fn into_elements(self) -> KerfurElements {
         match self {
-            KerfurEmote::Dazed => Self::DAZED,
             KerfurEmote::Neutral => Self::NEUTRAL,
+            KerfurEmote::Meow => Self::MEOW,
+            KerfurEmote::Dazed => Self::DAZED,
         }
     }
 }

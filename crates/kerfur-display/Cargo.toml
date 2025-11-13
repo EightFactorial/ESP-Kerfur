@@ -11,3 +11,4 @@ workspace = true
 
 [dependencies]
 embedded-graphics = { workspace = true }
+libm = { workspace = true, optional = true }

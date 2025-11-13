@@ -63,7 +63,6 @@ impl<D: DrawTargetExt> KerfurDisplay<D> {
 
     /// Set the animation speed.
     #[inline]
-    #[must_use]
     pub const fn set_speed(&mut self, speed: f32) { self.speed = speed; }
 
     /// Get Kerfur's current expression.
@@ -104,6 +103,14 @@ impl<D: DrawTargetExt> KerfurDisplay<D> {
     /// Returns `true` if Kerfur is currently animating between expressions.
     #[must_use]
     pub fn is_animating(&self) -> bool { self.current != self.target }
+
+    /// Clear the display with the given color.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if clearing the display fails.
+    #[inline]
+    pub fn clear(&mut self, color: D::Color) -> Result<(), D::Error> { self.display.clear(color) }
 
     /// Animate the display and draw the face
     ///

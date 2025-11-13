@@ -17,4 +17,4 @@ esp-backtrace = { workspace = true }
 esp-rtos = { workspace = true }
 esp-hal = { workspace = true }
 esp-println = { workspace = true }
-kerfur-display = { workspace = true }
+kerfur-display = { workspace = true, features = ["libm"] }

@@ -1,6 +1,10 @@
 //! TODO
+#![expect(clippy::many_single_char_names, reason = "Math")]
 
-use embedded_graphics::{prelude::*, primitives::Line};
+use embedded_graphics::{
+    prelude::*,
+    primitives::{Ellipse, Line},
+};
 
 use crate::KerfurStyle;
 
@@ -26,20 +30,42 @@ impl Default for KerfurElements {
 impl KerfurElements {
     /// Create a new set of facial elements.
     ///
-    /// Defaults to a dazed-looking face.
+    /// Defaults to a neutral-looking face.
     #[must_use]
+    #[expect(clippy::erasing_op, reason = "Used for consistency")]
     pub const fn new() -> Self {
         Self {
-            eye: eye::EyeState { left: KerfurEyeType::Swirl, right: KerfurEyeType::Swirl },
+            eye: eye::EyeState {
+                left: KerfurEyeType::Ellipse(Ellipse::with_center(
+                    Point::new(480 * 24 / 100, 240),
+                    Size::new_equal(480 * 27 / 100),
+                )),
+                right: KerfurEyeType::Ellipse(Ellipse::with_center(
+                    Point::new(480 * 76 / 100, 240),
+                    Size::new_equal(480 * 27 / 100),
+                )),
+            },
             eyebrow: eye::EyebrowState {
-                left: Line::new(Point::new_equal(0), Point::new_equal(0)),
-                right: Line::new(Point::new_equal(0), Point::new_equal(0)),
+                left: Line::new(
+                    Point::new(480 * 42 / 100, 480 * 29 / 100),
+                    Point::new(480 * 35 / 100, 480 * 29 / 100),
+                ),
+                right: Line::new(
+                    Point::new(480 * 58 / 100, 480 * 29 / 100),
+                    Point::new(480 * 65 / 100, 480 * 29 / 100),
+                ),
             },
             mouth: mouth::MouthState { position: Point::new_equal(0) },
             whisker: whisker::WhiskerState {
-                left: Line::new(Point::new_equal(0), Point::new_equal(0)),
-                right: Line::new(Point::new_equal(0), Point::new_equal(0)),
-                offset: Point::new(0, 8),
+                left: Line::new(
+                    Point::new(480 * 7 / 100, 480 * 63 / 100),
+                    Point::new(480 * 0 / 100, 480 * 63 / 100),
+                ),
+                right: Line::new(
+                    Point::new(480 * 93 / 100, 480 * 63 / 100),
+                    Point::new(480 * 100 / 100, 480 * 63 / 100),
+                ),
+                offset: Point::new(0, 480 * 5 / 100),
                 count: 2,
             },
         }
@@ -109,19 +135,39 @@ impl KerfurElements {
 
 // -------------------------------------------------------------------------------------------------
 
-fn interp(a: f32, b: f32, t: f32) -> f32 { a * (1.0 - t) + (b * t) }
+// TODO: Fix negative?
+fn interp(a_x: f32, a_y: f32, b_x: f32, b_y: f32, t: f32) -> (f32, f32) {
+    let (diff_x, diff_y) = (b_x - a_x, b_y - a_y);
+    let dot = diff_x * diff_x + diff_y * diff_y;
 
-fn interp_point(a: &mut Point, b: &Point, t: f32) {
-    a.x = interp(a.x as f32, b.x as f32, t) as i32;
-    a.y = interp(a.y as f32, b.y as f32, t) as i32;
+    #[cfg(feature = "libm")]
+    let len = libm::sqrtf(dot);
+    #[cfg(not(feature = "libm"))]
+    let len = dot.sqrt();
+
+    if len <= t || len <= 1e-4 {
+        (b_x, b_y)
+    } else {
+        (a_x + diff_x / len * t, a_y + diff_y / len * t)
+    }
 }
 
-fn interp_size(a: &mut Size, b: &Size, t: f32) {
-    a.width = interp(a.width as f32, b.width as f32, t) as u32;
-    a.height = interp(a.height as f32, b.height as f32, t) as u32;
+#[expect(clippy::cast_precision_loss, reason = "Positions will never be that large")]
+#[expect(clippy::cast_possible_truncation, reason = "Positions will never be that large")]
+fn interp_point(a: &mut Point, b: Point, t: f32) {
+    let (x, y) = interp(a.x as f32, a.y as f32, b.x as f32, b.y as f32, t);
+    (a.x, a.y) = (x as i32, y as i32);
+}
+
+#[expect(clippy::cast_sign_loss, reason = "Size will never be negative")]
+#[expect(clippy::cast_precision_loss, reason = "Size will never be that large")]
+#[expect(clippy::cast_possible_truncation, reason = "Size will never be that large")]
+fn interp_size(a: &mut Size, b: Size, t: f32) {
+    let (w, h) = interp(a.width as f32, a.height as f32, b.width as f32, b.height as f32, t);
+    (a.width, a.height) = (w as u32, h as u32);
 }
 
 fn interp_line(a: &mut Line, b: &Line, t: f32) {
-    interp_point(&mut a.start, &b.start, t);
-    interp_point(&mut a.end, &b.end, t);
+    interp_point(&mut a.start, b.start, t);
+    interp_point(&mut a.end, b.end, t);
 }

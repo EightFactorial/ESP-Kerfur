@@ -26,7 +26,8 @@ esp-hal = { version = "1.0.0", features = ["unstable", "esp32s3"] }
 esp-println = { version = "0.16.0", features = ["defmt-espflash", "esp32s3"] }
 
 # Other
-embedded-graphics-simulator = { version = "0.8.0", features = [] }
+embedded-graphics-simulator = { version = "0.8.0", features = ["with-sdl"] }
+libm = { version = "0.2.15" }
 
 # --- Workspace Settings ---
 
