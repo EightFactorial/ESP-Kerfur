@@ -11,27 +11,32 @@ strip = "debuginfo"
 
 [workspace.dependencies]
 # Workspace
-kerfur-emote = { path = "crates/kerfur-emote", version = "0.0.1" }
+kerfus = { path = "crates/kerfur", version = "0.0.1" }
+kerfur-display = { path = "crates/kerfur-display", version = "0.0.1" }
 
 # Embassy/Embedded
 embassy-executor = { version = "0.9.0", features = ["defmt"] }
 embassy-time = { version = "0.5.0", features = ["defmt", "defmt-timestamp-uptime-ms"] }
+embedded-graphics = { version = "0.8.1", features = [] }
 # Espressif
-esp-alloc = { version = "0.9.0", features = ["defmt", "esp32s3"] }
+esp-alloc = { version = "0.9.0", features = ["defmt", "nightly", "esp32s3"] }
 esp-backtrace = { version = "0.18.0", features = ["defmt", "halt-cores", "panic-handler", "esp32s3"] }
 esp-rtos = { version = "0.2.0", features = ["defmt", "embassy", "esp-radio", "esp32s3"] }
 esp-hal = { version = "1.0.0", features = ["unstable", "esp32s3"] }
 esp-println = { version = "0.16.0", features = ["defmt-espflash", "esp32s3"] }
 
+# Other
+embedded-graphics-simulator = { version = "0.8.0", features = [] }
+
 # --- Workspace Settings ---
 
 [workspace]
+default-members = ["crates/kerfur"]
 members = ["crates/*"]
 resolver = "2"
 
 [workspace.package]
 edition = "2024"
-include = ["/assets/**", "/src/**", "Cargo.toml"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 rust-version = "1.90.0"

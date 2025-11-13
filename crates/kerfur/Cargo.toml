@@ -1,7 +1,6 @@
 [package]
-name = "kurfur"
+name = "kerfur"
 edition = { workspace = true }
-include = { workspace = true }
 license = { workspace = true }
 readme = { workspace = true }
 rust-version = { workspace = true }
@@ -18,3 +17,4 @@ esp-backtrace = { workspace = true }
 esp-rtos = { workspace = true }
 esp-hal = { workspace = true }
 esp-println = { workspace = true }
+kerfur-display = { workspace = true }

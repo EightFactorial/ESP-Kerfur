@@ -1,7 +1,6 @@
 [package]
-name = "kurfur-emote"
+name = "kerfur-display"
 edition = { workspace = true }
-include = { workspace = true }
 license = { workspace = true }
 readme = { workspace = true }
 rust-version = { workspace = true }
@@ -11,3 +10,4 @@ version = { workspace = true }
 workspace = true
 
 [dependencies]
+embedded-graphics = { workspace = true }

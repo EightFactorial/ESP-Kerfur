@@ -1,5 +1,5 @@
-ALL_FEATURES := "features=async,resolver,resolver-sys,nightly"
-NO_FEATURES := "no-default-features --features=libm"
+ESP_TARGET := "xtensa-esp32s3-none-elf"
+ESP_CFG := "-Zbuild-std=\"core,alloc\""
 
 # Generate the changelog
 changelog path="CHANGELOG.md":
@@ -7,13 +7,20 @@ changelog path="CHANGELOG.md":
 
 # Run the clippy linter
 clippy:
-    cargo clippy --workspace --{{ALL_FEATURES}} -- -D warnings
-    cargo clippy --workspace --{{NO_FEATURES}} -- -D warnings
+    cargo clippy --workspace -- -D warnings
 
 # Build the project
 build mode="release":
-    cargo build --package=froglight --{{mode}} --{{ALL_FEATURES}}
-    cargo build --package=froglight --{{mode}} --{{NO_FEATURES}}
+    cargo build --package=kerfur --profile={{mode}} --target={{ESP_TARGET}} {{ESP_CFG}}
+
+# Run the project
+run mode="release":
+    cargo run --package=kerfur --profile={{mode}} --target={{ESP_TARGET}} {{ESP_CFG}}
+
+alias sim := simulate
+# Run the project simulator
+simulate mode="release":
+      cargo run --package=kerfur-simulator --profile={{mode}}
 
 # Check all project dependencies
 deny:
@@ -21,8 +28,7 @@ deny:
 
 # Run all workspace tests
 test:
-    cargo test --workspace --{{ALL_FEATURES}}
-    cargo test --workspace --{{NO_FEATURES}}
+    cargo test --workspace
 
 # Check all files for typos
 typos:
@@ -34,7 +40,7 @@ update:
     @echo '{{CYAN+BOLD}}note{{NORMAL}}: or, if you have `just` installed, run `just inspect <dep>@<ver>`'
 
 # Show the dependency tree for a specific package
-inspect package="froglight":
+inspect package="kerfur":
     cargo tree --invert --package={{package}}
 
 # Update and run all checks

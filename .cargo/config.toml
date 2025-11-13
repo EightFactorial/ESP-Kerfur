@@ -1,9 +1,3 @@
-[build]
-target = "xtensa-esp32s3-none-elf"
-
-[unstable]
-build-std = ["core", "alloc"]
-
 [target.'cfg(target_arch = "xtensa")']
 runner = "espflash flash --monitor"
 rustflags = [
@@ -14,7 +8,7 @@ rustflags = [
   "--cfg", 'target_has_atomic="32"',
   "--cfg", 'target_has_atomic="ptr"',
   # Enable the atomic codegen option for Xtensa
-  # TODO: Hide the warnings from this somehow
+  # TODO: Hide the warnings from this flag
   "-C", "target-feature=+s32c1i",
 
   "-C", "force-frame-pointers",
