@@ -1,0 +1,15 @@
+[package]
+name = "kerfur-simulator"
+edition = { workspace = true }
+license = { workspace = true }
+readme = { workspace = true }
+rust-version = { workspace = true }
+version = { workspace = true }
+
+[lints]
+workspace = true
+
+[dependencies]
+embedded-graphics = { workspace = true }
+embedded-graphics-simulator = { workspace = true }
+kerfur-display = { workspace = true }
