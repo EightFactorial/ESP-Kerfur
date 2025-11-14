@@ -1,3 +1,5 @@
+use core::sync::atomic::Ordering;
+
 use embedded_graphics::{
     prelude::*,
     primitives::{Circle, Ellipse, Line, PrimitiveStyle, StyledDrawable},
@@ -5,7 +7,9 @@ use embedded_graphics::{
 
 use crate::{
     KerfurStyle,
+    atomic::AtomicF32,
     element::{interp_line, interp_point, interp_size},
+    primitive::Swirl,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -52,14 +56,15 @@ impl EyeState {
                 Ok(())
             }
             KerfurEyeType::Swirl(circle) => {
-                // If only the stroke color is set, swap it with the fill color
-                let mut style = *style;
-                if style.fill_color.is_none() && style.stroke_color.is_some() {
-                    style.fill_color = style.stroke_color.take();
-                }
+                /// The rotation of the eye's swirl
+                static ROTATION: AtomicF32 = AtomicF32::new(0.0);
 
-                // Draw the outer circle
-                circle.draw_styled(&style, display)?;
+                // Get the current rotation and increment it for next time
+                let rotation = ROTATION.load(Ordering::Relaxed);
+                ROTATION.store(rotation + 0.1, Ordering::Relaxed);
+
+                Swirl::with_center(circle.center(), Angle::from_radians(rotation), circle.diameter)
+                    .draw_styled(style, display)?;
 
                 Ok(())
             }

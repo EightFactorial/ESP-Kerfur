@@ -12,3 +12,11 @@ workspace = true
 [dependencies]
 embedded-graphics = { workspace = true }
 libm = { workspace = true, optional = true }
+
+[features]
+default = ["std"]
+
+# Enable Rust's standard library
+std = []
+# Enable using `libm` in `no_std` environments
+libm = ["dep:libm"]

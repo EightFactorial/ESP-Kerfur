@@ -12,4 +12,7 @@ workspace = true
 [dependencies]
 embedded-graphics = { workspace = true }
 embedded-graphics-simulator = { workspace = true }
-kerfur-display = { workspace = true }
+kerfur-display = { workspace = true, features = ["std"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+sdl2 = { workspace = true, features = ["use-vcpkg", "static-link"] }

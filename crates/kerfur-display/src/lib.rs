@@ -1,10 +1,16 @@
 //! TODO
 #![no_std]
 
+#[cfg(feature = "std")]
+extern crate std;
+
 use embedded_graphics::{
     pixelcolor::{BinaryColor, Rgb888},
     prelude::*,
 };
+
+mod atomic;
+pub mod primitive;
 
 pub mod element;
 pub use element::KerfurElements;

@@ -11,8 +11,8 @@ strip = "debuginfo"
 
 [workspace.dependencies]
 # Workspace
-kerfus = { path = "crates/kerfur", version = "0.0.1" }
-kerfur-display = { path = "crates/kerfur-display", version = "0.0.1" }
+kerfus = {  version = "0.0.1", default-features = false, path = "crates/kerfur" }
+kerfur-display = { version = "0.0.1", default-features = false, path = "crates/kerfur-display" }
 
 # Embassy/Embedded
 embassy-executor = { version = "0.9.0", features = ["defmt"] }
@@ -28,6 +28,7 @@ esp-println = { version = "0.16.0", features = ["defmt-espflash", "esp32s3"] }
 # Other
 embedded-graphics-simulator = { version = "0.8.0", features = ["with-sdl"] }
 libm = { version = "0.2.15" }
+sdl2 = { version = "0.38.0" }
 
 # --- Workspace Settings ---
 

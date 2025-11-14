@@ -1,6 +1,8 @@
 //! TODO
 #![expect(clippy::many_single_char_names, reason = "Math")]
 
+use core::cmp::Ordering;
+
 use embedded_graphics::{
     prelude::*,
     primitives::{Ellipse, Line},
@@ -65,7 +67,7 @@ impl KerfurElements {
                     Point::new(480 * 93 / 100, 480 * 63 / 100),
                     Point::new(480 * 100 / 100, 480 * 63 / 100),
                 ),
-                offset: Point::new(0, 480 * 5 / 100),
+                offset: Point::new(0, 24),
                 count: 2,
             },
         }
@@ -138,14 +140,14 @@ impl KerfurElements {
 // TODO: Fix negative?
 fn interp(a_x: f32, a_y: f32, b_x: f32, b_y: f32, t: f32) -> (f32, f32) {
     let (diff_x, diff_y) = (b_x - a_x, b_y - a_y);
-    let dot = diff_x * diff_x + diff_y * diff_y;
+    let dot = (diff_x * diff_x) + (diff_y * diff_y);
 
     #[cfg(feature = "libm")]
     let len = libm::sqrtf(dot);
     #[cfg(not(feature = "libm"))]
     let len = dot.sqrt();
 
-    if len <= t || len <= 1e-4 {
+    if len <= t || len <= 1e-6 {
         (b_x, b_y)
     } else {
         (a_x + diff_x / len * t, a_y + diff_y / len * t)
@@ -155,16 +157,26 @@ fn interp(a_x: f32, a_y: f32, b_x: f32, b_y: f32, t: f32) -> (f32, f32) {
 #[expect(clippy::cast_precision_loss, reason = "Positions will never be that large")]
 #[expect(clippy::cast_possible_truncation, reason = "Positions will never be that large")]
 fn interp_point(a: &mut Point, b: Point, t: f32) {
+    let ceil_or_floor = matches!(Point::cmp(a, &b), Ordering::Less);
     let (x, y) = interp(a.x as f32, a.y as f32, b.x as f32, b.y as f32, t);
-    (a.x, a.y) = (x as i32, y as i32);
+    if ceil_or_floor {
+        (a.x, a.y) = (x.ceil() as i32, y.ceil() as i32);
+    } else {
+        (a.x, a.y) = (x.floor() as i32, y.floor() as i32);
+    }
 }
 
 #[expect(clippy::cast_sign_loss, reason = "Size will never be negative")]
 #[expect(clippy::cast_precision_loss, reason = "Size will never be that large")]
 #[expect(clippy::cast_possible_truncation, reason = "Size will never be that large")]
 fn interp_size(a: &mut Size, b: Size, t: f32) {
+    let ceil_or_floor = matches!(Size::cmp(a, &b), Ordering::Less);
     let (w, h) = interp(a.width as f32, a.height as f32, b.width as f32, b.height as f32, t);
-    (a.width, a.height) = (w as u32, h as u32);
+    if ceil_or_floor {
+        (a.width, a.height) = (w.ceil() as u32, h.ceil() as u32);
+    } else {
+        (a.width, a.height) = (w.floor() as u32, h.floor() as u32);
+    }
 }
 
 fn interp_line(a: &mut Line, b: &Line, t: f32) {

@@ -25,32 +25,38 @@ impl<C: PixelColor> KerfurStyle<C> {}
 // -------------------------------------------------------------------------------------------------
 
 macro_rules! binary_style {
-    ($color:expr) => {{
-        let color = $color;
+    ($fill:expr, $stroke:expr) => {{
+        let fill = $fill;
+        let stroke = $stroke;
         KerfurStyle {
-            left_eye: PrimitiveStyle::with_stroke(color, 24),
-            left_eyebrow: PrimitiveStyle::with_stroke(color, 16),
-
-            right_eye: PrimitiveStyle::with_stroke(color, 24),
-            right_eyebrow: PrimitiveStyle::with_stroke(color, 16),
-
-            whisker: PrimitiveStyle::with_stroke(color, 10),
+            left_eye: binary_style!(@style fill, stroke, 24),
+            left_eyebrow: binary_style!(@style fill, stroke, 16),
+            right_eye: binary_style!(@style fill, stroke, 24),
+            right_eyebrow: binary_style!(@style fill, stroke, 16),
+            whisker: binary_style!(@style fill, stroke, 10),
         }
+    }};
+    (@style $fill:expr, $stroke:expr, $width:expr) => {{
+        let mut style = PrimitiveStyle::new();
+        style.fill_color = Some($fill);
+        style.stroke_color = Some($stroke);
+        style.stroke_width = $width;
+        style
     }};
 }
 
 impl KerfurStyle<Rgb888> {
     /// A style that displays a blue Kerfur.
-    pub const BLUE: Self = binary_style!(Rgb888::CSS_CYAN);
+    pub const BLUE: Self = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_CYAN);
     /// A style that displays a pink Kerfur.
-    pub const PINK: Self = binary_style!(Rgb888::CSS_HOT_PINK);
+    pub const PINK: Self = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_HOT_PINK);
     /// A style that displays a red Kerfur.
-    pub const RED: Self = binary_style!(Rgb888::CSS_RED);
+    pub const RED: Self = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_RED);
     /// A style that displays a white Kerfur.
-    pub const WHITE: Self = binary_style!(Rgb888::CSS_WHITE);
+    pub const WHITE: Self = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_WHITE);
 }
 
 impl KerfurStyle<BinaryColor> {
     /// A style used for displays that have only two color states.
-    pub const BINARY: Self = binary_style!(BinaryColor::On);
+    pub const BINARY: Self = binary_style!(BinaryColor::Off, BinaryColor::On);
 }
