@@ -4,6 +4,8 @@
 #[cfg(feature = "std")]
 extern crate std;
 
+use core::ops::{Deref, DerefMut};
+
 use embedded_graphics::{
     pixelcolor::{BinaryColor, Rgb888},
     prelude::*,
@@ -27,19 +29,28 @@ pub struct KerfurDisplay<D: DrawTargetExt> {
     current: KerfurElements,
     target: KerfurElements,
     animating: bool,
-    speed: f32,
 }
 
 impl<D: DrawTargetExt> KerfurDisplay<D> {
     /// Create a new [`KerfurDisplay`].
+    #[inline]
     #[must_use]
     pub fn new_with_style<E: KerfurExpression>(
         display: D,
         style: KerfurStyle<D::Color>,
         expression: E,
     ) -> Self {
-        let elements = expression.into_elements();
-        Self { display, style, current: elements, target: elements, animating: false, speed: 1.0 }
+        Self::const_new_with_style(display, style, expression.into_elements())
+    }
+
+    /// Create a new [`KerfurDisplay`].
+    #[must_use]
+    pub const fn const_new_with_style(
+        display: D,
+        style: KerfurStyle<D::Color>,
+        elements: KerfurElements,
+    ) -> Self {
+        Self { display, style, current: elements, target: elements, animating: false }
     }
 
     /// Get a reference to the inner display.
@@ -61,15 +72,6 @@ impl<D: DrawTargetExt> KerfurDisplay<D> {
     #[inline]
     #[must_use]
     pub const fn style_mut(&mut self) -> &mut KerfurStyle<D::Color> { &mut self.style }
-
-    /// Get the animation speed.
-    #[inline]
-    #[must_use]
-    pub const fn speed(&mut self) -> f32 { self.speed }
-
-    /// Set the animation speed.
-    #[inline]
-    pub const fn set_speed(&mut self, speed: f32) { self.speed = speed; }
 
     /// Get Kerfur's current expression.
     ///
@@ -112,14 +114,6 @@ impl<D: DrawTargetExt> KerfurDisplay<D> {
     #[must_use]
     pub fn is_animating(&self) -> bool { self.animating }
 
-    /// Clear the display with the given color.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if clearing the display fails.
-    #[inline]
-    pub fn clear(&mut self, color: D::Color) -> Result<(), D::Error> { self.display.clear(color) }
-
     /// Animate the display and draw the face
     ///
     /// # Warning
@@ -131,11 +125,23 @@ impl<D: DrawTargetExt> KerfurDisplay<D> {
     /// Returns an error if drawing to the display fails.
     pub fn draw(&mut self, tick: f32) -> Result<(), D::Error> {
         if self.animating {
-            self.current.interpolate(&self.target, tick * self.speed);
+            self.current.interpolate(&self.target, tick);
             self.animating = self.current != self.target;
         }
         self.current.draw(&mut self.display, &self.style)
     }
+}
+
+impl<D: DrawTargetExt> Deref for KerfurDisplay<D> {
+    type Target = D;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target { &self.display }
+}
+
+impl<D: DrawTargetExt> DerefMut for KerfurDisplay<D> {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.display }
 }
 
 // -------------------------------------------------------------------------------------------------

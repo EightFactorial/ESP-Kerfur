@@ -1,4 +1,7 @@
 //! TODO
+#![expect(clippy::cast_precision_loss, reason = "Framerate should never be that high")]
+
+use std::time::{Duration, Instant};
 
 use embedded_graphics::{pixelcolor::Rgb888, prelude::*};
 use embedded_graphics_simulator::{
@@ -7,8 +10,8 @@ use embedded_graphics_simulator::{
 };
 use kerfur_display::{KerfurDisplay, KerfurEmote};
 
-const FRAMERATE: u32 = 120;
-#[expect(clippy::cast_precision_loss, reason = "Framerate should never be that high")]
+/// The target framerate of the simulator window
+const FRAMERATE: u32 = 165;
 const FRAMETIME: f32 = 1.0 / FRAMERATE as f32;
 
 fn main() {
@@ -19,15 +22,20 @@ fn main() {
     let mut kerfur = KerfurDisplay::blue(display, KerfurEmote::Neutral);
 
     let mut locked = false;
+    let mut instant = Instant::now();
 
     loop {
+        // Draw the kerfur display
         kerfur.clear(Rgb888::BLACK).unwrap();
         kerfur.draw(10.).unwrap();
 
-        window.update(kerfur.display());
+        // Update the window and handle events
+        window.update(&kerfur);
         for event in window.events() {
             match event {
+                // Exit when the window is closed
                 SimulatorEvent::Quit => return,
+                // Toggle lock on SPACE key, preventing expression changes
                 SimulatorEvent::KeyDown { keycode: Keycode::SPACE, .. } => {
                     if locked {
                         locked = false;
@@ -38,6 +46,7 @@ fn main() {
                 }
                 // Don't change expressions if locked
                 _ if locked => {}
+                // Display various expressions based on input
                 SimulatorEvent::MouseButtonDown { mouse_btn: MouseButton::Left, .. } => {
                     kerfur.set_expression(KerfurEmote::Meow);
                 }
@@ -58,6 +67,10 @@ fn main() {
             }
         }
 
-        std::thread::sleep(std::time::Duration::from_secs_f32(FRAMETIME));
+        // Get elapsed time and reset the instant
+        let elapsed = instant.elapsed();
+        instant = Instant::now();
+        // Sleep until the next frame
+        std::thread::sleep(Duration::from_secs_f32(FRAMETIME).saturating_sub(elapsed));
     }
 }

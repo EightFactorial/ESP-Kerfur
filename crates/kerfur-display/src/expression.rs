@@ -1,9 +1,6 @@
-use core::f32::consts::PI;
+use core::f32::consts::{FRAC_PI_8, PI};
 
-use embedded_graphics::{
-    prelude::*,
-    primitives::{Ellipse, Line},
-};
+use embedded_graphics::{prelude::*, primitives::Line};
 
 use crate::{KerfurElements, element::KerfurEyeType, primitive::ConstSector};
 
@@ -17,6 +14,7 @@ pub enum KerfurEmote {
     NeutralLeft,
     /// A neutral face looking right
     NeutralRight,
+
     /// A meowing face
     Meow,
     /// A dazed face
@@ -40,25 +38,13 @@ impl KerfurEmote {
     pub const NEUTRAL: KerfurElements = KerfurElements::new();
     /// The [`KerfurElements`] for the [`KerfurEmote::NeutralLeft`] emote.
     pub const NEUTRAL_LEFT: KerfurElements = KerfurElements::new().with_eyes(
-        KerfurEyeType::Ellipse(
-            Ellipse::with_center(Point::new(480 * 24 / 100, 240), Size::new_equal(480 * 32 / 100)),
-            Ellipse::with_center(Point::new(480 * 20 / 100, 240), Size::new_equal(480 * 22 / 100)),
-        ),
-        KerfurEyeType::Ellipse(
-            Ellipse::with_center(Point::new(480 * 76 / 100, 240), Size::new_equal(480 * 32 / 100)),
-            Ellipse::with_center(Point::new(480 * 72 / 100, 240), Size::new_equal(480 * 22 / 100)),
-        ),
+        KerfurEyeType::NEUTRAL_LEFT.with_pupil_translated(Point::new(-12, 0)),
+        KerfurEyeType::NEUTRAL_RIGHT.with_pupil_translated(Point::new(-12, 0)),
     );
     /// The [`KerfurElements`] for the [`KerfurEmote::NeutralRight`] emote.
     pub const NEUTRAL_RIGHT: KerfurElements = KerfurElements::new().with_eyes(
-        KerfurEyeType::Ellipse(
-            Ellipse::with_center(Point::new(480 * 24 / 100, 240), Size::new_equal(480 * 32 / 100)),
-            Ellipse::with_center(Point::new(480 * 28 / 100, 240), Size::new_equal(480 * 22 / 100)),
-        ),
-        KerfurEyeType::Ellipse(
-            Ellipse::with_center(Point::new(480 * 76 / 100, 240), Size::new_equal(480 * 32 / 100)),
-            Ellipse::with_center(Point::new(480 * 80 / 100, 240), Size::new_equal(480 * 22 / 100)),
-        ),
+        KerfurEyeType::NEUTRAL_LEFT.with_pupil_translated(Point::new(12, 0)),
+        KerfurEyeType::NEUTRAL_RIGHT.with_pupil_translated(Point::new(12, 0)),
     );
 }
 
@@ -81,8 +67,8 @@ impl KerfurEmote {
                 ConstSector::with_center(
                     Point::new(480 * 46 / 100, 235),
                     480 * 75 / 100,
-                    PI - (PI / 8.0),
-                    2. * (PI / 8.0),
+                    PI - FRAC_PI_8,
+                    2. * FRAC_PI_8,
                 ),
                 ConstSector::with_center(
                     Point::new(480 * 34 / 100, 235),
@@ -95,8 +81,8 @@ impl KerfurEmote {
                 ConstSector::with_center(
                     Point::new(480 * 54 / 100, 235),
                     480 * 75 / 100,
-                    (2. * PI) - (PI / 8.0),
-                    2. * (PI / 8.0),
+                    (2. * PI) - FRAC_PI_8,
+                    2. * FRAC_PI_8,
                 ),
                 ConstSector::with_center(
                     Point::new(480 * 66 / 100, 235),

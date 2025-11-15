@@ -20,6 +20,8 @@ pub struct KerfurStyle<C: PixelColor> {
     /// Style for the right eyebrow
     pub right_eyebrow: PrimitiveStyle<C>,
 
+    /// Style for the mouth
+    pub mouth: PrimitiveStyle<C>,
     /// Style for the whiskers
     pub whisker: PrimitiveStyle<C>,
 }
@@ -39,6 +41,7 @@ macro_rules! binary_style {
             right_eye_inner: binary_style!(@style fill),
             right_eye_outer: binary_style!(@style stroke),
             right_eyebrow: binary_style!(@style fill, stroke, 16),
+            mouth: binary_style!(@style fill, stroke, 8),
             whisker: binary_style!(@style fill, stroke, 10),
         }
     }};

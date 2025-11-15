@@ -39,6 +39,51 @@ impl KerfurEyeType {
         Ellipse::with_center(Point::new(480 * 76 / 100, 240), Size::new_equal(480 * 32 / 100)),
         Ellipse::with_center(Point::new(480 * 76 / 100, 240), Size::new_equal(480 * 22 / 100)),
     );
+
+    /// Returns the eye with the pupil translated by the given amount.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the eye is not of type [`KerfurEyeType::Ellipse`].
+    #[must_use]
+    pub const fn with_pupil_translated(mut self, by: Point) -> Self {
+        let KerfurEyeType::Ellipse(_, inner) = &mut self else {
+            panic!("Eye is not of type `KerfurEyeType::Ellipse`!")
+        };
+
+        inner.top_left.x += by.x;
+        inner.top_left.y += by.y;
+
+        self
+    }
+
+    /// Returns the eye with the pupil resized by the given amount.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the eye is not of type [`KerfurEyeType::Ellipse`].
+    #[must_use]
+    pub const fn with_pupil_resized(mut self, by: Point) -> Self {
+        let KerfurEyeType::Ellipse(_, inner) = &mut self else {
+            panic!("Eye is not of type `KerfurEyeType::Ellipse`!")
+        };
+
+        inner.top_left.x -= by.x / 2;
+        inner.top_left.y -= by.y / 2;
+
+        if let Some(result) = inner.size.width.checked_add_signed(by.x) {
+            inner.size.width = result;
+        } else {
+            inner.size.width = 0;
+        }
+        if let Some(result) = inner.size.height.checked_add_signed(by.y) {
+            inner.size.height = result;
+        } else {
+            inner.size.height = 0;
+        }
+
+        self
+    }
 }
 
 impl EyeState {
