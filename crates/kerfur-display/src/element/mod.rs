@@ -3,10 +3,7 @@
 
 use core::cmp::Ordering;
 
-use embedded_graphics::{
-    prelude::*,
-    primitives::{Ellipse, Line},
-};
+use embedded_graphics::{prelude::*, primitives::Line};
 
 use crate::KerfurStyle;
 
@@ -17,7 +14,7 @@ mod mouth;
 mod whisker;
 
 /// A set of facial elements
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct KerfurElements {
     eye: eye::EyeState,
     eyebrow: eye::EyebrowState,
@@ -38,14 +35,8 @@ impl KerfurElements {
     pub const fn new() -> Self {
         Self {
             eye: eye::EyeState {
-                left: KerfurEyeType::Ellipse(Ellipse::with_center(
-                    Point::new(480 * 24 / 100, 240),
-                    Size::new_equal(480 * 27 / 100),
-                )),
-                right: KerfurEyeType::Ellipse(Ellipse::with_center(
-                    Point::new(480 * 76 / 100, 240),
-                    Size::new_equal(480 * 27 / 100),
-                )),
+                left: KerfurEyeType::NEUTRAL_LEFT,
+                right: KerfurEyeType::NEUTRAL_RIGHT,
             },
             eyebrow: eye::EyebrowState {
                 left: Line::new(
@@ -115,7 +106,7 @@ impl KerfurElements {
     ///
     /// Returns an error if any of the elements fail to draw.
     pub(super) fn draw<D: DrawTargetExt>(
-        &self,
+        &mut self,
         display: &mut D,
         style: &KerfurStyle<D::Color>,
     ) -> Result<(), D::Error> {
@@ -147,7 +138,7 @@ fn interp(a_x: f32, a_y: f32, b_x: f32, b_y: f32, t: f32) -> (f32, f32) {
     #[cfg(not(feature = "libm"))]
     let len = dot.sqrt();
 
-    if len <= t || len <= 1e-6 {
+    if len <= t || len <= 1e-4 {
         (b_x, b_y)
     } else {
         (a_x + diff_x / len * t, a_y + diff_y / len * t)
@@ -160,9 +151,23 @@ fn interp_point(a: &mut Point, b: Point, t: f32) {
     let ceil_or_floor = matches!(Point::cmp(a, &b), Ordering::Less);
     let (x, y) = interp(a.x as f32, a.y as f32, b.x as f32, b.y as f32, t);
     if ceil_or_floor {
-        (a.x, a.y) = (x.ceil() as i32, y.ceil() as i32);
+        #[cfg(feature = "libm")]
+        {
+            (a.x, a.y) = (libm::ceilf(x) as i32, libm::ceilf(y) as i32);
+        }
+        #[cfg(not(feature = "libm"))]
+        {
+            (a.x, a.y) = (x.ceil() as i32, y.ceil() as i32);
+        }
     } else {
-        (a.x, a.y) = (x.floor() as i32, y.floor() as i32);
+        #[cfg(feature = "libm")]
+        {
+            (a.x, a.y) = (libm::floorf(x) as i32, libm::floorf(y) as i32);
+        }
+        #[cfg(not(feature = "libm"))]
+        {
+            (a.x, a.y) = (x.floor() as i32, y.floor() as i32);
+        }
     }
 }
 
@@ -173,13 +178,44 @@ fn interp_size(a: &mut Size, b: Size, t: f32) {
     let ceil_or_floor = matches!(Size::cmp(a, &b), Ordering::Less);
     let (w, h) = interp(a.width as f32, a.height as f32, b.width as f32, b.height as f32, t);
     if ceil_or_floor {
-        (a.width, a.height) = (w.ceil() as u32, h.ceil() as u32);
+        #[cfg(feature = "libm")]
+        {
+            (a.width, a.height) = (libm::ceilf(w) as u32, libm::ceilf(h) as u32);
+        }
+        #[cfg(not(feature = "libm"))]
+        {
+            (a.width, a.height) = (w.ceil() as u32, h.ceil() as u32);
+        }
     } else {
-        (a.width, a.height) = (w.floor() as u32, h.floor() as u32);
+        #[cfg(feature = "libm")]
+        {
+            (a.width, a.height) = (libm::floorf(w) as u32, libm::floorf(h) as u32);
+        }
+        #[cfg(not(feature = "libm"))]
+        {
+            (a.width, a.height) = (w.floor() as u32, h.floor() as u32);
+        }
     }
 }
 
 fn interp_line(a: &mut Line, b: &Line, t: f32) {
     interp_point(&mut a.start, b.start, t);
     interp_point(&mut a.end, b.end, t);
+}
+
+fn interp_angle(a: &mut f32, b: f32, t: f32) {
+    let (a_rad, b_rad) = (a.to_radians(), b.to_radians());
+    let diff = b_rad - a_rad;
+    let dot = diff * diff;
+
+    #[cfg(feature = "libm")]
+    let len = libm::sqrtf(dot);
+    #[cfg(not(feature = "libm"))]
+    let len = dot.sqrt();
+
+    if len <= t || len <= 1e-4 {
+        *a = b;
+    } else {
+        *a = a_rad + diff / len * t;
+    }
 }

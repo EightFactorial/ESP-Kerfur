@@ -9,7 +9,6 @@ use embedded_graphics::{
     prelude::*,
 };
 
-mod atomic;
 pub mod primitive;
 
 pub mod element;
@@ -27,6 +26,7 @@ pub struct KerfurDisplay<D: DrawTargetExt> {
     style: KerfurStyle<D::Color>,
     current: KerfurElements,
     target: KerfurElements,
+    animating: bool,
     speed: f32,
 }
 
@@ -39,7 +39,7 @@ impl<D: DrawTargetExt> KerfurDisplay<D> {
         expression: E,
     ) -> Self {
         let elements = expression.into_elements();
-        Self { display, style, current: elements, target: elements, speed: 1.0 }
+        Self { display, style, current: elements, target: elements, animating: false, speed: 1.0 }
     }
 
     /// Get a reference to the inner display.
@@ -93,6 +93,7 @@ impl<D: DrawTargetExt> KerfurDisplay<D> {
     /// This will not immediately change the expression,
     /// but will animate toward it over time.
     pub fn set_expression<E: KerfurExpression>(&mut self, expression: E) {
+        self.animating = true;
         self.target = expression.into_elements();
     }
 
@@ -103,12 +104,13 @@ impl<D: DrawTargetExt> KerfurDisplay<D> {
     /// This does not change the target expression,
     /// and will continue to animate toward it.
     pub fn set_expression_immediate<E: KerfurExpression>(&mut self, expression: E) {
+        self.animating = true;
         self.current = expression.into_elements();
     }
 
     /// Returns `true` if Kerfur is currently animating between expressions.
     #[must_use]
-    pub fn is_animating(&self) -> bool { self.current != self.target }
+    pub fn is_animating(&self) -> bool { self.animating }
 
     /// Clear the display with the given color.
     ///
@@ -128,8 +130,9 @@ impl<D: DrawTargetExt> KerfurDisplay<D> {
     ///
     /// Returns an error if drawing to the display fails.
     pub fn draw(&mut self, tick: f32) -> Result<(), D::Error> {
-        if self.is_animating() {
+        if self.animating {
             self.current.interpolate(&self.target, tick * self.speed);
+            self.animating = self.current != self.target;
         }
         self.current.draw(&mut self.display, &self.style)
     }

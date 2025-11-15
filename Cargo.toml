@@ -15,15 +15,15 @@ kerfus = {  version = "0.0.1", default-features = false, path = "crates/kerfur" 
 kerfur-display = { version = "0.0.1", default-features = false, path = "crates/kerfur-display" }
 
 # Embassy/Embedded
-embassy-executor = { version = "0.9.0", features = ["defmt"] }
+embassy-executor = { version = "0.9.1", features = ["defmt"] }
 embassy-time = { version = "0.5.0", features = ["defmt", "defmt-timestamp-uptime-ms"] }
 embedded-graphics = { version = "0.8.1", features = [] }
 # Espressif
 esp-alloc = { version = "0.9.0", features = ["defmt", "nightly", "esp32s3"] }
-esp-backtrace = { version = "0.18.0", features = ["defmt", "halt-cores", "panic-handler", "esp32s3"] }
+esp-backtrace = { version = "0.18.1", features = ["defmt", "halt-cores", "panic-handler", "esp32s3"] }
 esp-rtos = { version = "0.2.0", features = ["defmt", "embassy", "esp-radio", "esp32s3"] }
 esp-hal = { version = "1.0.0", features = ["unstable", "esp32s3"] }
-esp-println = { version = "0.16.0", features = ["defmt-espflash", "esp32s3"] }
+esp-println = { version = "0.16.1", features = ["defmt-espflash", "esp32s3"] }
 
 # Other
 embedded-graphics-simulator = { version = "0.8.0", features = ["with-sdl"] }

@@ -7,9 +7,10 @@ pub(super) struct MouthState {
     pub(super) position: Point,
 }
 
+#[expect(warnings, reason = "WIP")]
 impl MouthState {
     pub(super) fn draw<D: DrawTargetExt>(
-        &self,
+        &mut self,
         _display: &mut D,
         _style: &KerfurStyle<D::Color>,
     ) -> Result<(), D::Error> {

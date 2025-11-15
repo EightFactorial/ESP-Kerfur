@@ -6,13 +6,17 @@ use embedded_graphics::{
 
 /// A style for drawing Kerfur
 pub struct KerfurStyle<C: PixelColor> {
-    /// Style for the left eye
-    pub left_eye: PrimitiveStyle<C>,
+    /// Style for the left eye inside
+    pub left_eye_inner: PrimitiveStyle<C>,
+    /// Style for the left eye outside
+    pub left_eye_outer: PrimitiveStyle<C>,
     /// Style for the left eyebrow
     pub left_eyebrow: PrimitiveStyle<C>,
 
-    /// Style for the right eye
-    pub right_eye: PrimitiveStyle<C>,
+    /// Style for the right eye inside
+    pub right_eye_inner: PrimitiveStyle<C>,
+    /// Style for the right eye outside
+    pub right_eye_outer: PrimitiveStyle<C>,
     /// Style for the right eyebrow
     pub right_eyebrow: PrimitiveStyle<C>,
 
@@ -29,9 +33,11 @@ macro_rules! binary_style {
         let fill = $fill;
         let stroke = $stroke;
         KerfurStyle {
-            left_eye: binary_style!(@style fill, stroke, 24),
+            left_eye_inner: binary_style!(@style fill),
+            left_eye_outer: binary_style!(@style stroke),
             left_eyebrow: binary_style!(@style fill, stroke, 16),
-            right_eye: binary_style!(@style fill, stroke, 24),
+            right_eye_inner: binary_style!(@style fill),
+            right_eye_outer: binary_style!(@style stroke),
             right_eyebrow: binary_style!(@style fill, stroke, 16),
             whisker: binary_style!(@style fill, stroke, 10),
         }
@@ -43,6 +49,11 @@ macro_rules! binary_style {
         style.stroke_width = $width;
         style
     }};
+    (@style $fill:expr) => {{
+        let mut style = PrimitiveStyle::new();
+        style.fill_color = Some($fill);
+        style
+    }};
 }
 
 impl KerfurStyle<Rgb888> {
@@ -50,8 +61,8 @@ impl KerfurStyle<Rgb888> {
     pub const BLUE: Self = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_CYAN);
     /// A style that displays a pink Kerfur.
     pub const PINK: Self = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_HOT_PINK);
-    /// A style that displays a red Kerfur.
-    pub const RED: Self = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_RED);
+    /// A style that displays a red Kerfur (has a green display).
+    pub const RED: Self = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_GREEN);
     /// A style that displays a white Kerfur.
     pub const WHITE: Self = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_WHITE);
 }

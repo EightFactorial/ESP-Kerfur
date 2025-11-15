@@ -15,7 +15,7 @@ pub(super) struct WhiskerState {
 
 impl WhiskerState {
     pub(super) fn draw<D: DrawTargetExt>(
-        &self,
+        &mut self,
         display: &mut D,
         style: &KerfurStyle<D::Color>,
     ) -> Result<(), D::Error> {
