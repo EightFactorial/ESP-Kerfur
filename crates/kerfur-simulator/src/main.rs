@@ -27,7 +27,7 @@ fn main() {
     loop {
         // Draw the kerfur display
         kerfur.clear(Rgb888::BLACK).unwrap();
-        kerfur.draw(10.).unwrap();
+        kerfur.draw(5.).unwrap();
 
         // Update the window and handle events
         window.update(&kerfur);

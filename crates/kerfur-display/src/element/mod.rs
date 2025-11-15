@@ -1,11 +1,17 @@
 //! TODO
 #![expect(clippy::many_single_char_names, reason = "Math")]
 
-use core::cmp::Ordering;
+use core::{
+    cmp::Ordering,
+    f32::consts::{FRAC_PI_2, FRAC_PI_4, PI},
+};
 
 use embedded_graphics::{prelude::*, primitives::Line};
 
-use crate::KerfurStyle;
+use crate::{
+    KerfurStyle,
+    primitive::{ConstArc, ConstSector},
+};
 
 mod eye;
 pub use eye::KerfurEyeType;
@@ -48,7 +54,17 @@ impl KerfurElements {
                     Point::new(480 * 65 / 100, 480 * 29 / 100),
                 ),
             },
-            mouth: mouth::MouthState { position: Point::new_equal(0) },
+            mouth: mouth::MouthState {
+                nose: ConstSector::with_center(
+                    Point::new(240, 480 * 58 / 100),
+                    30,
+                    3. * FRAC_PI_2 - FRAC_PI_4,
+                    2. * FRAC_PI_4,
+                ),
+                mouth_left: ConstArc::with_center(Point::new(228, 480 * 59 / 100), 24, 0., PI),
+                mouth_right: ConstArc::with_center(Point::new(252, 480 * 59 / 100), 24, PI, -PI),
+                mouth_bottom: ConstArc::with_center(Point::new(240, 480 * 62 / 100), 0, PI, 0.),
+            },
             whisker: whisker::WhiskerState {
                 left: Line::new(
                     Point::new(480 * 7 / 100, 480 * 63 / 100),
@@ -79,6 +95,23 @@ impl KerfurElements {
     pub const fn with_eyebrows(mut self, left: Line, right: Line) -> Self {
         self.eyebrow.left = left;
         self.eyebrow.right = right;
+        self
+    }
+
+    /// Use the given mouth in the set of facial elements.
+    #[inline]
+    #[must_use]
+    pub const fn with_mouth(
+        mut self,
+        nose: ConstSector,
+        mouth_left: ConstArc,
+        mouth_right: ConstArc,
+        mouth_bottom: ConstArc,
+    ) -> Self {
+        self.mouth.nose = nose;
+        self.mouth.mouth_left = mouth_left;
+        self.mouth.mouth_right = mouth_right;
+        self.mouth.mouth_bottom = mouth_bottom;
         self
     }
 

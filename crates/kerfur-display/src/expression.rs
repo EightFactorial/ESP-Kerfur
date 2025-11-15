@@ -1,8 +1,12 @@
-use core::f32::consts::{FRAC_PI_8, PI};
+use core::f32::consts::{FRAC_PI_2, FRAC_PI_4, FRAC_PI_8, PI};
 
 use embedded_graphics::{prelude::*, primitives::Line};
 
-use crate::{KerfurElements, element::KerfurEyeType, primitive::ConstSector};
+use crate::{
+    KerfurElements,
+    element::KerfurEyeType,
+    primitive::{ConstArc, ConstSector},
+};
 
 /// A set of default Kerfur expressions.
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
@@ -101,6 +105,17 @@ impl KerfurEmote {
                 Point::new(480 * 58 / 100, 480 * 34 / 100),
                 Point::new(480 * 65 / 100, 480 * 33 / 100),
             ),
+        )
+        .with_mouth(
+            ConstSector::with_center(
+                Point::new(240, 480 * 58 / 100),
+                30,
+                3. * FRAC_PI_2 - FRAC_PI_4,
+                2. * FRAC_PI_4,
+            ),
+            ConstArc::with_center(Point::new(228, 480 * 59 / 100), 24, 0., PI),
+            ConstArc::with_center(Point::new(252, 480 * 59 / 100), 24, PI, -PI),
+            ConstArc::with_center(Point::new(240, 480 * 62 / 100), 29, PI, -PI),
         );
 }
 

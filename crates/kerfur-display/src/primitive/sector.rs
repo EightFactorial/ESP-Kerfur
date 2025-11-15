@@ -4,7 +4,7 @@ use embedded_graphics::{
 };
 
 /// A [`Sector`] primitive with `const` constructors
-#[derive(Copy, Clone, PartialEq, PartialOrd, Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub struct ConstSector {
     /// Top-left point of the bounding-box of the circle supporting the sector
     pub top_left: Point,
@@ -41,7 +41,7 @@ impl ConstSector {
         ConstSector { top_left, diameter, angle_start, angle_sweep }
     }
 
-    /// Convert to an `embedded_graphics` [`Sector`].
+    /// Convert this [`ConstSector`] into a [`Sector`].
     #[must_use]
     pub fn into_sector(self) -> Sector {
         Sector {

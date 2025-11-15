@@ -137,9 +137,11 @@ impl EyeState {
                 interp_point(&mut a1.top_left, b1.top_left, tick);
                 interp_angle(&mut a1.angle_start, b1.angle_start, tick);
                 interp_angle(&mut a1.angle_sweep, b1.angle_sweep, tick);
+                interp_diameter(&mut a1.diameter, b1.diameter, tick);
                 interp_point(&mut a2.top_left, b2.top_left, tick);
                 interp_angle(&mut a2.angle_start, b2.angle_start, tick);
                 interp_angle(&mut a2.angle_sweep, b2.angle_sweep, tick);
+                interp_diameter(&mut a2.diameter, b2.diameter, tick);
             }
             (KerfurEyeType::Swirl(a), KerfurEyeType::Swirl(b)) => {
                 interp_point(&mut a.circle.top_left, b.circle.top_left, tick);
@@ -148,6 +150,14 @@ impl EyeState {
             (current, other) => *current = *other,
         }
     }
+}
+
+// Interpolate the diameter of an arc.
+// TODO: Stop being lazy and make a proper function.
+fn interp_diameter(a: &mut u32, b: u32, tick: f32) {
+    let mut size = Size::new(*a, 0);
+    interp_size(&mut size, Size::new(b, 0), tick);
+    *a = size.width;
 }
 
 // -------------------------------------------------------------------------------------------------

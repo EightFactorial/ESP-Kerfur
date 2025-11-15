@@ -4,10 +4,10 @@ use embedded_graphics::{
 };
 
 /// Swirl primitive
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Swirl {
     /// The angle of the swirl
-    pub angle: Angle,
+    pub angle: f32,
     /// The circle to draw the swirl in
     pub circle: Circle,
 }
@@ -15,13 +15,13 @@ pub struct Swirl {
 impl Swirl {
     /// Create a new [`Swirl`].
     #[must_use]
-    pub const fn new(top_left: Point, angle: Angle, diameter: u32) -> Self {
+    pub const fn new(top_left: Point, angle: f32, diameter: u32) -> Self {
         Self { angle, circle: Circle::new(top_left, diameter) }
     }
 
     /// Create a new [`Swirl`] with the given center point.
     #[must_use]
-    pub const fn with_center(center: Point, angle: Angle, diameter: u32) -> Self {
+    pub const fn with_center(center: Point, angle: f32, diameter: u32) -> Self {
         Self { angle, circle: Circle::with_center(center, diameter) }
     }
 }

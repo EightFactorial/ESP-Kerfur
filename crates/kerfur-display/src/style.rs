@@ -20,8 +20,13 @@ pub struct KerfurStyle<C: PixelColor> {
     /// Style for the right eyebrow
     pub right_eyebrow: PrimitiveStyle<C>,
 
+    /// Style for the nose
+    pub nose: PrimitiveStyle<C>,
     /// Style for the mouth
     pub mouth: PrimitiveStyle<C>,
+    /// Style for the lower mouth
+    pub mouth_bottom: PrimitiveStyle<C>,
+
     /// Style for the whiskers
     pub whisker: PrimitiveStyle<C>,
 }
@@ -41,13 +46,21 @@ macro_rules! binary_style {
             right_eye_inner: binary_style!(@style fill),
             right_eye_outer: binary_style!(@style stroke),
             right_eyebrow: binary_style!(@style fill, stroke, 16),
-            mouth: binary_style!(@style fill, stroke, 8),
+            nose: binary_style!(@style stroke),
+            mouth: binary_style!(@style fill, stroke, 6),
+            mouth_bottom: binary_style!(@style fill, stroke, 3),
             whisker: binary_style!(@style fill, stroke, 10),
         }
     }};
     (@style $fill:expr, $stroke:expr, $width:expr) => {{
         let mut style = PrimitiveStyle::new();
         style.fill_color = Some($fill);
+        style.stroke_color = Some($stroke);
+        style.stroke_width = $width;
+        style
+    }};
+    (@style $stroke:expr, $width:expr) => {{
+        let mut style = PrimitiveStyle::new();
         style.stroke_color = Some($stroke);
         style.stroke_width = $width;
         style
