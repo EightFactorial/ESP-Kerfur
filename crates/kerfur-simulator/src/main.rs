@@ -29,6 +29,11 @@ fn main() {
         kerfur.clear(Rgb888::BLACK).unwrap();
         kerfur.draw(5.).unwrap();
 
+        // Simulate spaces between pixels
+        kerfur
+            .draw_iter(ScanlineIterator::<_, 2>::new(Point::new_equal(480), Rgb888::BLACK))
+            .unwrap();
+
         // Update the window and handle events
         window.update(&kerfur);
         for event in window.events() {
@@ -53,6 +58,12 @@ fn main() {
                 SimulatorEvent::MouseButtonDown { mouse_btn: MouseButton::Right, .. } => {
                     kerfur.set_expression(KerfurEmote::Dazed);
                 }
+                SimulatorEvent::KeyDown { keycode: Keycode::UP, .. } => {
+                    kerfur.set_expression(KerfurEmote::NeutralUp);
+                }
+                SimulatorEvent::KeyDown { keycode: Keycode::DOWN, .. } => {
+                    kerfur.set_expression(KerfurEmote::NeutralDown);
+                }
                 SimulatorEvent::KeyDown { keycode: Keycode::LEFT, .. } => {
                     kerfur.set_expression(KerfurEmote::NeutralLeft);
                 }
@@ -60,7 +71,10 @@ fn main() {
                     kerfur.set_expression(KerfurEmote::NeutralRight);
                 }
                 SimulatorEvent::MouseButtonUp { .. }
-                | SimulatorEvent::KeyUp { keycode: Keycode::LEFT | Keycode::RIGHT, .. } => {
+                | SimulatorEvent::KeyUp {
+                    keycode: Keycode::UP | Keycode::DOWN | Keycode::LEFT | Keycode::RIGHT,
+                    ..
+                } => {
                     kerfur.set_expression(KerfurEmote::Neutral);
                 }
                 _ => {}
@@ -72,5 +86,53 @@ fn main() {
         instant = Instant::now();
         // Sleep until the next frame
         std::thread::sleep(Duration::from_secs_f32(FRAMETIME).saturating_sub(elapsed));
+    }
+}
+
+struct ScanlineIterator<C: PixelColor, const N: i32> {
+    size: Point,
+    curr: Point,
+    color: C,
+}
+
+impl<C: PixelColor, const N: i32> ScanlineIterator<C, N> {
+    #[must_use]
+    const fn new(size: Point, color: C) -> Self { Self { size, color, curr: Point::zero() } }
+}
+
+impl<C: PixelColor, const N: i32> Iterator for ScanlineIterator<C, N> {
+    type Item = Pixel<C>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.curr.y >= self.size.y {
+            None
+        } else {
+            loop {
+                // Draw blocks of N pixels every N pixels
+                if self.curr.x / N % 2 == 1 {
+                    break;
+                }
+                // Every N rows, skip N rows
+                if self.curr.y / N % 2 == 1 {
+                    break;
+                }
+
+                self.curr.x += 1;
+                if self.curr.x >= self.size.x {
+                    self.curr.x = 0;
+                    self.curr.y += 1;
+                }
+            }
+
+            let output = Pixel(self.curr, self.color);
+
+            self.curr.x += 1;
+            if self.curr.x >= self.size.x {
+                self.curr.x = 0;
+                self.curr.y += 1;
+            }
+
+            Some(output)
+        }
     }
 }

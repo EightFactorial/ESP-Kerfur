@@ -47,8 +47,8 @@ macro_rules! binary_style {
             right_eye_outer: binary_style!(@style stroke),
             right_eyebrow: binary_style!(@style fill, stroke, 16),
             nose: binary_style!(@style stroke),
-            mouth: binary_style!(@style fill, stroke, 6),
-            mouth_bottom: binary_style!(@style fill, stroke, 3),
+            mouth: binary_style!(@style fill, stroke, 8),
+            mouth_bottom: binary_style!(@style fill, stroke, 8),
             whisker: binary_style!(@style fill, stroke, 10),
         }
     }};

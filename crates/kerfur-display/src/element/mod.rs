@@ -3,7 +3,7 @@
 
 use core::{
     cmp::Ordering,
-    f32::consts::{FRAC_PI_2, FRAC_PI_4, PI},
+    f32::consts::{FRAC_PI_2, FRAC_PI_4, FRAC_PI_6, PI},
 };
 
 use embedded_graphics::{prelude::*, primitives::Line};
@@ -57,13 +57,18 @@ impl KerfurElements {
             mouth: mouth::MouthState {
                 nose: ConstSector::with_center(
                     Point::new(240, 480 * 58 / 100),
-                    30,
+                    40,
                     3. * FRAC_PI_2 - FRAC_PI_4,
                     2. * FRAC_PI_4,
                 ),
-                mouth_left: ConstArc::with_center(Point::new(228, 480 * 59 / 100), 24, 0., PI),
-                mouth_right: ConstArc::with_center(Point::new(252, 480 * 59 / 100), 24, PI, -PI),
-                mouth_bottom: ConstArc::with_center(Point::new(240, 480 * 62 / 100), 0, PI, 0.),
+                mouth_left: ConstArc::with_center(Point::new(225, 480 * 59 / 100), 30, 0., PI),
+                mouth_right: ConstArc::with_center(Point::new(255, 480 * 59 / 100), 30, PI, -PI),
+                mouth_bottom: ConstArc::with_center(
+                    Point::new(240, 480 * 64 / 100),
+                    20,
+                    -FRAC_PI_6,
+                    0.,
+                ),
             },
             whisker: whisker::WhiskerState {
                 left: Line::new(
@@ -98,19 +103,27 @@ impl KerfurElements {
         self
     }
 
-    /// Use the given mouth in the set of facial elements.
+    /// Use the given nose in the set of facial elements.
     #[inline]
     #[must_use]
-    pub const fn with_mouth(
-        mut self,
-        nose: ConstSector,
-        mouth_left: ConstArc,
-        mouth_right: ConstArc,
-        mouth_bottom: ConstArc,
-    ) -> Self {
+    pub const fn with_nose(mut self, nose: ConstSector) -> Self {
         self.mouth.nose = nose;
+        self
+    }
+
+    /// Use the given mouth sides in the set of facial elements.
+    #[inline]
+    #[must_use]
+    pub const fn with_mouth_sides(mut self, mouth_left: ConstArc, mouth_right: ConstArc) -> Self {
         self.mouth.mouth_left = mouth_left;
         self.mouth.mouth_right = mouth_right;
+        self
+    }
+
+    /// Use the given mouth bottom in the set of facial elements.
+    #[inline]
+    #[must_use]
+    pub const fn with_mouth_bottom(mut self, mouth_bottom: ConstArc) -> Self {
         self.mouth.mouth_bottom = mouth_bottom;
         self
     }
@@ -231,11 +244,6 @@ fn interp_size(a: &mut Size, b: Size, t: f32) {
     }
 }
 
-fn interp_line(a: &mut Line, b: &Line, t: f32) {
-    interp_point(&mut a.start, b.start, t);
-    interp_point(&mut a.end, b.end, t);
-}
-
 fn interp_angle(a: &mut f32, b: f32, t: f32) {
     let (a_rad, b_rad) = (a.to_radians(), b.to_radians());
     let diff = b_rad - a_rad;
@@ -251,4 +259,9 @@ fn interp_angle(a: &mut f32, b: f32, t: f32) {
     } else {
         *a = a_rad + diff / len * t;
     }
+}
+
+fn interp_line(a: &mut Line, b: &Line, t: f32) {
+    interp_point(&mut a.start, b.start, t);
+    interp_point(&mut a.end, b.end, t);
 }

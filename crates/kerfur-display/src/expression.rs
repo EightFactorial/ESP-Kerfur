@@ -1,4 +1,4 @@
-use core::f32::consts::{FRAC_PI_2, FRAC_PI_4, FRAC_PI_8, PI};
+use core::f32::consts::{FRAC_PI_6, FRAC_PI_8, PI};
 
 use embedded_graphics::{prelude::*, primitives::Line};
 
@@ -14,6 +14,10 @@ pub enum KerfurEmote {
     /// A neutral face
     #[default]
     Neutral,
+    /// A neutral face looking up
+    NeutralUp,
+    /// A neutral face looking down
+    NeutralDown,
     /// A neutral face looking left
     NeutralLeft,
     /// A neutral face looking right
@@ -29,6 +33,8 @@ impl KerfurExpression for KerfurEmote {
     fn into_elements(self) -> KerfurElements {
         match self {
             KerfurEmote::Neutral => Self::NEUTRAL,
+            KerfurEmote::NeutralUp => Self::NEUTRAL_UP,
+            KerfurEmote::NeutralDown => Self::NEUTRAL_DOWN,
             KerfurEmote::NeutralLeft => Self::NEUTRAL_LEFT,
             KerfurEmote::NeutralRight => Self::NEUTRAL_RIGHT,
             KerfurEmote::Meow => Self::MEOW,
@@ -40,6 +46,11 @@ impl KerfurExpression for KerfurEmote {
 impl KerfurEmote {
     /// The [`KerfurElements`] for the [`KerfurEmote::Neutral`] emote.
     pub const NEUTRAL: KerfurElements = KerfurElements::new();
+    /// The [`KerfurElements`] for the [`KerfurEmote::NeutralDown`] emote.
+    pub const NEUTRAL_DOWN: KerfurElements = KerfurElements::new().with_eyes(
+        KerfurEyeType::NEUTRAL_LEFT.with_pupil_translated(Point::new(0, 12)),
+        KerfurEyeType::NEUTRAL_RIGHT.with_pupil_translated(Point::new(0, 12)),
+    );
     /// The [`KerfurElements`] for the [`KerfurEmote::NeutralLeft`] emote.
     pub const NEUTRAL_LEFT: KerfurElements = KerfurElements::new().with_eyes(
         KerfurEyeType::NEUTRAL_LEFT.with_pupil_translated(Point::new(-12, 0)),
@@ -49,6 +60,11 @@ impl KerfurEmote {
     pub const NEUTRAL_RIGHT: KerfurElements = KerfurElements::new().with_eyes(
         KerfurEyeType::NEUTRAL_LEFT.with_pupil_translated(Point::new(12, 0)),
         KerfurEyeType::NEUTRAL_RIGHT.with_pupil_translated(Point::new(12, 0)),
+    );
+    /// The [`KerfurElements`] for the [`KerfurEmote::NeutralUp`] emote.
+    pub const NEUTRAL_UP: KerfurElements = KerfurElements::new().with_eyes(
+        KerfurEyeType::NEUTRAL_LEFT.with_pupil_translated(Point::new(0, -12)),
+        KerfurEyeType::NEUTRAL_RIGHT.with_pupil_translated(Point::new(0, -12)),
     );
 }
 
@@ -106,17 +122,12 @@ impl KerfurEmote {
                 Point::new(480 * 65 / 100, 480 * 33 / 100),
             ),
         )
-        .with_mouth(
-            ConstSector::with_center(
-                Point::new(240, 480 * 58 / 100),
-                30,
-                3. * FRAC_PI_2 - FRAC_PI_4,
-                2. * FRAC_PI_4,
-            ),
-            ConstArc::with_center(Point::new(228, 480 * 59 / 100), 24, 0., PI),
-            ConstArc::with_center(Point::new(252, 480 * 59 / 100), 24, PI, -PI),
-            ConstArc::with_center(Point::new(240, 480 * 62 / 100), 29, PI, -PI),
-        );
+        .with_mouth_bottom(ConstArc::with_center(
+            Point::new(240, 480 * 64 / 100),
+            50,
+            -FRAC_PI_6,
+            PI + 2. * FRAC_PI_6,
+        ));
 }
 
 // -------------------------------------------------------------------------------------------------
