@@ -16,10 +16,12 @@ const FRAMETIME: f32 = 1.0 / FRAMERATE as f32;
 
 fn main() {
     let mut window = Window::new("Kerfur Simulator", &OutputSettings::default());
-    window.set_max_fps(FRAMERATE);
 
     let display = SimulatorDisplay::<Rgb888>::new(Size::new(480, 480));
     let mut kerfur = KerfurDisplay::blue(display, KerfurEmote::Neutral);
+
+    let mut neutral = true;
+    let mut blink_counter = 0u32;
 
     let mut locked = false;
     let mut instant = Instant::now();
@@ -43,6 +45,7 @@ fn main() {
                 // Toggle lock on SPACE key, preventing expression changes
                 SimulatorEvent::KeyDown { keycode: Keycode::SPACE, .. } => {
                     if locked {
+                        neutral = true;
                         locked = false;
                         kerfur.set_expression(KerfurEmote::Neutral);
                     } else {
@@ -54,21 +57,27 @@ fn main() {
                 // Display various expressions based on input
                 SimulatorEvent::MouseButtonDown { mouse_btn: MouseButton::Left, .. } => {
                     kerfur.set_expression(KerfurEmote::Meow);
+                    neutral = false;
                 }
                 SimulatorEvent::MouseButtonDown { mouse_btn: MouseButton::Right, .. } => {
                     kerfur.set_expression(KerfurEmote::Dazed);
+                    neutral = false;
                 }
                 SimulatorEvent::KeyDown { keycode: Keycode::UP, .. } => {
                     kerfur.set_expression(KerfurEmote::NeutralUp);
+                    neutral = false;
                 }
                 SimulatorEvent::KeyDown { keycode: Keycode::DOWN, .. } => {
                     kerfur.set_expression(KerfurEmote::NeutralDown);
+                    neutral = false;
                 }
                 SimulatorEvent::KeyDown { keycode: Keycode::LEFT, .. } => {
                     kerfur.set_expression(KerfurEmote::NeutralLeft);
+                    neutral = false;
                 }
                 SimulatorEvent::KeyDown { keycode: Keycode::RIGHT, .. } => {
                     kerfur.set_expression(KerfurEmote::NeutralRight);
+                    neutral = false;
                 }
                 SimulatorEvent::MouseButtonUp { .. }
                 | SimulatorEvent::KeyUp {
@@ -76,14 +85,27 @@ fn main() {
                     ..
                 } => {
                     kerfur.set_expression(KerfurEmote::Neutral);
+                    neutral = true;
                 }
                 _ => {}
+            }
+        }
+
+        // Handle blinking when using the neutral expression
+        if neutral {
+            blink_counter += 1;
+            if blink_counter >= 230 {
+                blink_counter = 0;
+                kerfur.set_expression(KerfurEmote::Neutral);
+            } else if blink_counter == 200 {
+                kerfur.set_expression(KerfurEmote::Blink);
             }
         }
 
         // Get elapsed time and reset the instant
         let elapsed = instant.elapsed();
         instant = Instant::now();
+
         // Sleep until the next frame
         std::thread::sleep(Duration::from_secs_f32(FRAMETIME).saturating_sub(elapsed));
     }

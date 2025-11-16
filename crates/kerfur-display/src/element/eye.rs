@@ -29,6 +29,16 @@ pub enum KerfurEyeType {
 }
 
 impl KerfurEyeType {
+    /// The default, blinking left eye.
+    pub const BLINK_LEFT: KerfurEyeType = KerfurEyeType::Line(Line::new(
+        Point::new(480 * 8 / 100, 240),
+        Point::new(480 * 40 / 100, 240),
+    ));
+    /// The default, blinking right eye.
+    pub const BLINK_RIGHT: KerfurEyeType = KerfurEyeType::Line(Line::new(
+        Point::new(480 * 60 / 100, 240),
+        Point::new(480 * 92 / 100, 240),
+    ));
     /// The default, neutral left eye.
     pub const NEUTRAL_LEFT: KerfurEyeType = KerfurEyeType::Ellipse(
         Ellipse::with_center(Point::new(480 * 24 / 100, 240), Size::new_equal(480 * 32 / 100)),
@@ -92,9 +102,20 @@ impl EyeState {
         display: &mut D,
         style: &KerfurStyle<D::Color>,
     ) -> Result<(), D::Error> {
-        Self::draw_eye(&mut self.left, display, &style.left_eye_inner, &style.left_eye_outer)?;
-        Self::draw_eye(&mut self.right, display, &style.right_eye_inner, &style.right_eye_outer)?;
-        Ok(())
+        Self::draw_eye(
+            &mut self.left,
+            display,
+            &style.left_eye_inner,
+            &style.left_eye_outer,
+            &style.left_eye_line,
+        )?;
+        Self::draw_eye(
+            &mut self.right,
+            display,
+            &style.right_eye_inner,
+            &style.right_eye_outer,
+            &style.right_eye_line,
+        )
     }
 
     fn draw_eye<D: DrawTargetExt>(
@@ -102,6 +123,7 @@ impl EyeState {
         display: &mut D,
         inner: &PrimitiveStyle<D::Color>,
         outer: &PrimitiveStyle<D::Color>,
+        line: &PrimitiveStyle<D::Color>,
     ) -> Result<(), D::Error> {
         match eye {
             KerfurEyeType::Ellipse(ellipse_a, ellipse_b) => {
@@ -112,7 +134,7 @@ impl EyeState {
                 sector_a.into_sector().draw_styled(outer, display)?;
                 sector_b.into_sector().draw_styled(inner, display)
             }
-            KerfurEyeType::Line(line) => line.draw_styled(outer, display),
+            KerfurEyeType::Line(eye) => eye.draw_styled(line, display),
             KerfurEyeType::Swirl(swirl) => swirl.draw_styled(outer, display),
         }
     }

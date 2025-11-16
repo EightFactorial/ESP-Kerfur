@@ -14,6 +14,9 @@ pub enum KerfurEmote {
     /// A neutral face
     #[default]
     Neutral,
+    /// A blinking face
+    Blink,
+
     /// A neutral face looking up
     NeutralUp,
     /// A neutral face looking down
@@ -33,6 +36,7 @@ impl KerfurExpression for KerfurEmote {
     fn into_elements(self) -> KerfurElements {
         match self {
             KerfurEmote::Neutral => Self::NEUTRAL,
+            KerfurEmote::Blink => Self::BLINK,
             KerfurEmote::NeutralUp => Self::NEUTRAL_UP,
             KerfurEmote::NeutralDown => Self::NEUTRAL_DOWN,
             KerfurEmote::NeutralLeft => Self::NEUTRAL_LEFT,
@@ -44,6 +48,9 @@ impl KerfurExpression for KerfurEmote {
 }
 
 impl KerfurEmote {
+    /// The [`KerfurElements`] for the [`KerfurEmote::Blink`] emote.
+    pub const BLINK: KerfurElements =
+        KerfurElements::new().with_eyes(KerfurEyeType::BLINK_LEFT, KerfurEyeType::BLINK_RIGHT);
     /// The [`KerfurElements`] for the [`KerfurEmote::Neutral`] emote.
     pub const NEUTRAL: KerfurElements = KerfurElements::new();
     /// The [`KerfurElements`] for the [`KerfurEmote::NeutralDown`] emote.
@@ -72,11 +79,11 @@ impl KerfurEmote {
     /// The [`KerfurElements`] for the [`KerfurEmote::Dazed`] emote.
     pub const DAZED: KerfurElements = KerfurElements::new().with_eyebrows(
         Line::new(
-            Point::new(480 * 42 / 100, 480 * 22 / 100),
+            Point::new(480 * 42 / 100, 480 * 24 / 100),
             Point::new(480 * 35 / 100, 480 * 25 / 100),
         ),
         Line::new(
-            Point::new(480 * 58 / 100, 480 * 22 / 100),
+            Point::new(480 * 58 / 100, 480 * 24 / 100),
             Point::new(480 * 65 / 100, 480 * 25 / 100),
         ),
     );

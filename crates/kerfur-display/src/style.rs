@@ -10,6 +10,8 @@ pub struct KerfurStyle<C: PixelColor> {
     pub left_eye_inner: PrimitiveStyle<C>,
     /// Style for the left eye outside
     pub left_eye_outer: PrimitiveStyle<C>,
+    /// Style for the left eye line
+    pub left_eye_line: PrimitiveStyle<C>,
     /// Style for the left eyebrow
     pub left_eyebrow: PrimitiveStyle<C>,
 
@@ -17,6 +19,8 @@ pub struct KerfurStyle<C: PixelColor> {
     pub right_eye_inner: PrimitiveStyle<C>,
     /// Style for the right eye outside
     pub right_eye_outer: PrimitiveStyle<C>,
+    /// Style for the right eye line
+    pub right_eye_line: PrimitiveStyle<C>,
     /// Style for the right eyebrow
     pub right_eyebrow: PrimitiveStyle<C>,
 
@@ -42,9 +46,11 @@ macro_rules! binary_style {
         KerfurStyle {
             left_eye_inner: binary_style!(@style fill),
             left_eye_outer: binary_style!(@style stroke),
+            left_eye_line: binary_style!(@style stroke, 16),
             left_eyebrow: binary_style!(@style fill, stroke, 16),
             right_eye_inner: binary_style!(@style fill),
             right_eye_outer: binary_style!(@style stroke),
+            right_eye_line: binary_style!(@style stroke, 16),
             right_eyebrow: binary_style!(@style fill, stroke, 16),
             nose: binary_style!(@style stroke),
             mouth: binary_style!(@style fill, stroke, 8),
