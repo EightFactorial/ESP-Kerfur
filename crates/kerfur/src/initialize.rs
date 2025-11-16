@@ -23,5 +23,5 @@ pub(super) fn init() -> Peripherals {
     heap_allocator!(size: 64 * 1000);
 
     // Initialize the microcontroller
-    esp_hal::init(Config::default().with_cpu_clock(CpuClock::_240MHz))
+    esp_hal::init(Config::default().with_cpu_clock(CpuClock::max()))
 }

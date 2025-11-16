@@ -1,0 +1,24 @@
+[package]
+name = "kerfur-gc9503"
+edition = { workspace = true }
+license = { workspace = true }
+readme = { workspace = true }
+rust-version = { workspace = true }
+version = { workspace = true }
+
+[lints]
+workspace = true
+
+[dependencies]
+bitflags = { workspace = true }
+display-interface = { workspace = true }
+display-interface-spi = { workspace = true }
+embedded-graphics-core = { workspace = true, optional = true}
+embedded-hal = { workspace = true }
+embedded-hal-async = { workspace = true }
+
+[features]
+default = ["embedded-graphics"]
+
+# Enable `embedded-graphics` support
+embedded-graphics = ["dep:embedded-graphics-core"]

@@ -10,7 +10,7 @@ version = { workspace = true }
 workspace = true
 
 [dependencies]
-embedded-graphics = { workspace = true }
+embedded-graphics-core = { workspace = true }
 embedded-graphics-simulator = { workspace = true }
 kerfur-display = { workspace = true, features = ["std"] }
 

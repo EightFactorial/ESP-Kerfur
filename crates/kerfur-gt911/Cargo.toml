@@ -1,0 +1,13 @@
+[package]
+name = "kerfur-gt911"
+edition = { workspace = true }
+license = { workspace = true }
+readme = { workspace = true }
+rust-version = { workspace = true }
+version = { workspace = true }
+
+[lints]
+workspace = true
+
+[dependencies]
+embedded-hal-async = { workspace = true }

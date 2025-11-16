@@ -10,11 +10,25 @@ version = { workspace = true }
 workspace = true
 
 [dependencies]
+# Workspace
+kerfur-display = { workspace = true, features = ["libm"] }
+kerfur-gc9503 = { workspace = true, features = ["embedded-graphics"] }
+kerfur-gt911 = { workspace = true }
+kerfur-tca9554 = { workspace = true }
+
+# Embassy/Embedded
+embassy-embedded-hal = { workspace = true }
 embassy-executor = { workspace = true }
+embassy-sync = { workspace = true }
 embassy-time = { workspace = true }
+# Espressif
 esp-alloc = { workspace = true }
 esp-backtrace = { workspace = true }
-esp-rtos = { workspace = true }
 esp-hal = { workspace = true }
 esp-println = { workspace = true }
-kerfur-display = { workspace = true, features = ["libm"] }
+esp-rtos = { workspace = true }
+
+# Other
+defmt = { workspace = true }
+port-expander = { workspace = true }
+static_cell = { workspace = true }

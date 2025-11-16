@@ -3,7 +3,7 @@
 
 use std::time::{Duration, Instant};
 
-use embedded_graphics::{pixelcolor::Rgb888, prelude::*};
+use embedded_graphics_core::{pixelcolor::Rgb888, prelude::*};
 use embedded_graphics_simulator::{
     OutputSettings, SimulatorDisplay, SimulatorEvent, Window,
     sdl2::{Keycode, MouseButton},

@@ -1,0 +1,21 @@
+[package]
+name = "kerfur-tca9554"
+edition = { workspace = true }
+license = { workspace = true }
+readme = { workspace = true }
+rust-version = { workspace = true }
+version = { workspace = true }
+
+[lints]
+workspace = true
+
+[dependencies]
+embassy-sync = { workspace = true }
+embedded-hal = { workspace = true }
+embedded-hal-async = { workspace = true }
+esp-hal = { workspace = true, optional = true }
+
+[features]
+default = []
+
+esp-hal = ["dep:esp-hal"]

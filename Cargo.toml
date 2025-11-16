@@ -11,24 +11,37 @@ strip = "debuginfo"
 
 [workspace.dependencies]
 # Workspace
-kerfus = {  version = "0.0.1", default-features = false, path = "crates/kerfur" }
 kerfur-display = { version = "0.0.1", default-features = false, path = "crates/kerfur-display" }
+kerfur-gc9503 = { version = "0.0.1", default-features = false, path = "crates/kerfur-gc9503" }
+kerfur-gt911 = { version = "0.0.1", default-features = false, path = "crates/kerfur-gt911" }
+kerfur-tca9554 = { version = "0.0.1", default-features = false, path = "crates/kerfur-tca9554" }
 
 # Embassy/Embedded
+embassy-embedded-hal = { version = "0.5.0", features = ["defmt", "time"] }
 embassy-executor = { version = "0.9.1", features = ["defmt"] }
+embassy-sync = { version = "0.7.2", features = ["defmt"] }
 embassy-time = { version = "0.5.0", features = ["defmt", "defmt-timestamp-uptime-ms"] }
-embedded-graphics = { version = "0.8.1", features = [] }
+embedded-graphics = { version = "0.8.1" }
+embedded-hal = { version = "1.0.0", features = ["defmt-03"] }
+embedded-hal-async = { version = "1.0.0", features = ["defmt-03"] }
 # Espressif
 esp-alloc = { version = "0.9.0", features = ["defmt", "nightly", "esp32s3"] }
 esp-backtrace = { version = "0.18.1", features = ["defmt", "halt-cores", "panic-handler", "esp32s3"] }
-esp-rtos = { version = "0.2.0", features = ["defmt", "embassy", "esp-radio", "esp32s3"] }
-esp-hal = { version = "1.0.0", features = ["unstable", "esp32s3"] }
+esp-hal = { version = "1.0.0", features = ["defmt", "unstable", "esp32s3"] }
 esp-println = { version = "0.16.1", features = ["defmt-espflash", "esp32s3"] }
+esp-rtos = { version = "0.2.0", features = ["defmt", "embassy", "esp-radio", "esp32s3"] }
 
 # Other
+bitflags = { version = "2.10.0" }
+defmt = { version = "1.0.1", features = ["ip_in_core"] }
+display-interface = { version = "0.5.0" }
+display-interface-spi = { version = "0.5.0" }
+embedded-graphics-core = { version = "0.4.0" }
 embedded-graphics-simulator = { version = "0.8.0", features = ["with-sdl"] }
 libm = { version = "0.2.15" }
+port-expander = { version = "0.6.5" }
 sdl2 = { version = "0.38.0" }
+static_cell = { version = "2.1.1", features = ["nightly"] }
 
 # --- Workspace Settings ---
 
