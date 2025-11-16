@@ -3,14 +3,17 @@
 #![no_main]
 #![no_std]
 
+use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
 use embassy_time::{Duration, Timer};
 use esp_hal::{
     Async,
+    gpio::{Level, Output, OutputConfig},
     i2c::master::{Config as I2cConfig, I2c},
     spi::master::{Config as SpiConfig, Spi},
 };
+use kerfur_gc9503::{Gc9503, Gc9503Channels, color::Rgb888};
 use kerfur_tca9554::Tca9554;
 use static_cell::StaticCell;
 
@@ -31,13 +34,44 @@ async fn main(_s: Spawner) -> ! {
     let i2c = I2C.init(Mutex::new(i2c.into_async()));
 
     // Initialize TCA9554 IO expander
-    let tca = Tca9554::<NoopRawMutex, I2c<'static, Async>>::new(i2c, 0x0);
-    let _tca = TCA.init(tca);
+    let tca = Tca9554::new(i2c, 0x0);
+    let tca = TCA.init(tca);
 
     // Initialize SPI using TCA9554 pins
     let spi = Spi::new(p.SPI2, SpiConfig::default()).unwrap();
-    // spi = spi.with_sck(tca.p2).with_cs(tca.p1).with_mosi(tca.p3);
-    let _spi = SPI.init(Mutex::new(spi.into_async()));
+    // spi = spi.with_sck(tca.p2).with_mosi(tca.p3);
+    let spi = SPI.init(Mutex::new(spi.into_async()));
+
+    // Initialize GC9503 display
+    let _display = Gc9503::<Rgb888, _, _, _>::new(
+        SpiDevice::new(spi, tca.p1.reborrow()),
+        Output::new(p.GPIO0, Level::Low, OutputConfig::default()),
+        Gc9503Channels {
+            enable: Output::new(p.GPIO17, Level::Low, OutputConfig::default()),
+            p_clck: Output::new(p.GPIO9, Level::Low, OutputConfig::default()),
+            v_sync: Output::new(p.GPIO3, Level::Low, OutputConfig::default()),
+            h_sync: Output::new(p.GPIO46, Level::Low, OutputConfig::default()),
+            display: None,
+            display_data: [
+                Output::new(p.GPIO10, Level::Low, OutputConfig::default()),
+                Output::new(p.GPIO11, Level::Low, OutputConfig::default()),
+                Output::new(p.GPIO12, Level::Low, OutputConfig::default()),
+                Output::new(p.GPIO13, Level::Low, OutputConfig::default()),
+                Output::new(p.GPIO14, Level::Low, OutputConfig::default()),
+                Output::new(p.GPIO21, Level::Low, OutputConfig::default()),
+                Output::new(p.GPIO47, Level::Low, OutputConfig::default()),
+                Output::new(p.GPIO48, Level::Low, OutputConfig::default()),
+                Output::new(p.GPIO45, Level::Low, OutputConfig::default()),
+                Output::new(p.GPIO38, Level::Low, OutputConfig::default()),
+                Output::new(p.GPIO39, Level::Low, OutputConfig::default()),
+                Output::new(p.GPIO40, Level::Low, OutputConfig::default()),
+                Output::new(p.GPIO41, Level::Low, OutputConfig::default()),
+                Output::new(p.GPIO42, Level::Low, OutputConfig::default()),
+                Output::new(p.GPIO1, Level::Low, OutputConfig::default()),
+                Output::new(p.GPIO2, Level::Low, OutputConfig::default()),
+            ],
+        },
+    );
 
     loop {
         Timer::after(Duration::MAX).await;
