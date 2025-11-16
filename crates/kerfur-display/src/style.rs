@@ -1,3 +1,5 @@
+//! TODO
+
 use embedded_graphics::{
     pixelcolor::{BinaryColor, Rgb888},
     prelude::*,
@@ -78,18 +80,17 @@ macro_rules! binary_style {
     }};
 }
 
-impl KerfurStyle<Rgb888> {
-    /// A style that displays a blue Kerfur.
-    pub const BLUE: Self = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_CYAN);
-    /// A style that displays a pink Kerfur.
-    pub const PINK: Self = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_HOT_PINK);
-    /// A style that displays a red Kerfur (has a green display).
-    pub const RED: Self = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_GREEN);
-    /// A style that displays a white Kerfur.
-    pub const WHITE: Self = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_WHITE);
-}
+/// A style that displays mimics a blue Kerfur.
+pub static BLUE: KerfurStyle<Rgb888> = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_CYAN);
+/// A style that displays mimics a pink Kerfur.
+pub static PINK: KerfurStyle<Rgb888> = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_HOT_PINK);
+/// A style that displays mimics a red Kerfur (has a green display).
+pub static RED: KerfurStyle<Rgb888> = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_GREEN);
 
-impl KerfurStyle<BinaryColor> {
-    /// A style used for displays that have only two color states.
-    pub const BINARY: Self = binary_style!(BinaryColor::Off, BinaryColor::On);
-}
+/// A style that displays a white Kerfur.
+pub static WHITE: KerfurStyle<Rgb888> = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_WHITE);
+
+/// A style that displays a white Kerfur (used by mono-color displays).
+pub static BINARY_ON: KerfurStyle<BinaryColor> = binary_style!(BinaryColor::Off, BinaryColor::On);
+/// A style that displays a black Kerfur (used by mono-color displays).
+pub static BINARY_OFF: KerfurStyle<BinaryColor> = binary_style!(BinaryColor::On, BinaryColor::Off);

@@ -19,38 +19,46 @@ pub use element::KerfurElements;
 mod expression;
 pub use expression::{KerfurEmote, KerfurExpression};
 
-mod style;
+pub mod style;
 pub use style::KerfurStyle;
 
 /// A display that draws Kerfur's face
-pub struct KerfurDisplay<D: DrawTargetExt> {
+pub struct KerfurDisplay<'style, D: DrawTargetExt> {
     display: D,
-    style: KerfurStyle<D::Color>,
+    style: &'style KerfurStyle<D::Color>,
     current: KerfurElements,
     target: KerfurElements,
     animating: bool,
 }
 
-impl<D: DrawTargetExt> KerfurDisplay<D> {
+impl<'style, D: DrawTargetExt> KerfurDisplay<'style, D> {
     /// Create a new [`KerfurDisplay`].
     #[inline]
     #[must_use]
     pub fn new_with_style<E: KerfurExpression>(
         display: D,
-        style: KerfurStyle<D::Color>,
+        style: &'style KerfurStyle<D::Color>,
         expression: E,
     ) -> Self {
-        Self::const_new_with_style(display, style, expression.into_elements())
+        Self::new_with_style_elements(display, style, expression.into_elements())
     }
 
     /// Create a new [`KerfurDisplay`].
     #[must_use]
-    pub const fn const_new_with_style(
+    pub const fn new_with_style_elements(
         display: D,
-        style: KerfurStyle<D::Color>,
+        style: &'style KerfurStyle<D::Color>,
         elements: KerfurElements,
     ) -> Self {
         Self { display, style, current: elements, target: elements, animating: false }
+    }
+
+    /// Set the display style.
+    #[inline]
+    #[must_use]
+    pub const fn with_style(mut self, style: &'style KerfurStyle<D::Color>) -> Self {
+        self.style = style;
+        self
     }
 
     /// Get a reference to the inner display.
@@ -66,12 +74,7 @@ impl<D: DrawTargetExt> KerfurDisplay<D> {
     /// Get a reference to the display style.
     #[inline]
     #[must_use]
-    pub const fn style(&self) -> &KerfurStyle<D::Color> { &self.style }
-
-    /// Get a mutable reference to the display style.
-    #[inline]
-    #[must_use]
-    pub const fn style_mut(&mut self) -> &mut KerfurStyle<D::Color> { &mut self.style }
+    pub const fn style(&self) -> &'style KerfurStyle<D::Color> { &self.style }
 
     /// Get Kerfur's current expression.
     ///
@@ -132,44 +135,60 @@ impl<D: DrawTargetExt> KerfurDisplay<D> {
     }
 }
 
-impl<D: DrawTargetExt> Deref for KerfurDisplay<D> {
+impl<D: DrawTargetExt> Deref for KerfurDisplay<'_, D> {
     type Target = D;
 
     #[inline]
     fn deref(&self) -> &Self::Target { &self.display }
 }
 
-impl<D: DrawTargetExt> DerefMut for KerfurDisplay<D> {
+impl<D: DrawTargetExt> DerefMut for KerfurDisplay<'_, D> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.display }
 }
 
 // -------------------------------------------------------------------------------------------------
 
-impl<D: DrawTargetExt<Color = Rgb888>> KerfurDisplay<D> {
+impl<D: DrawTargetExt<Color = Rgb888>> KerfurDisplay<'static, D> {
     /// Create a new blue [`KerfurDisplay`].
+    ///
+    /// Uses the [`BLUE`](crate::style::BLUE) style.
     #[inline]
     pub fn blue<E: KerfurExpression>(display: D, expression: E) -> Self {
-        Self::new_with_style(display, KerfurStyle::BLUE, expression)
+        Self::new_with_style(display, &crate::style::BLUE, expression)
     }
 
     /// Create a new pink [`KerfurDisplay`].
+    ///
+    /// Uses the [`PINK`](crate::style::PINK) style.
     #[inline]
     pub fn pink<E: KerfurExpression>(display: D, expression: E) -> Self {
-        Self::new_with_style(display, KerfurStyle::PINK, expression)
+        Self::new_with_style(display, &crate::style::PINK, expression)
     }
 
     /// Create a new red [`KerfurDisplay`].
+    ///
+    /// Uses the [`RED`](crate::style::RED) style.
     #[inline]
     pub fn red<E: KerfurExpression>(display: D, expression: E) -> Self {
-        Self::new_with_style(display, KerfurStyle::RED, expression)
+        Self::new_with_style(display, &crate::style::RED, expression)
     }
 }
 
-impl<D: DrawTargetExt<Color = BinaryColor>> KerfurDisplay<D> {
+impl<D: DrawTargetExt<Color = BinaryColor>> KerfurDisplay<'static, D> {
     /// Create a new binary [`KerfurDisplay`].
+    ///
+    /// Uses the [`BINARY_ON`](crate::style::BINARY_ON) style.
     #[inline]
-    pub fn binary<E: KerfurExpression>(display: D, expression: E) -> Self {
-        Self::new_with_style(display, KerfurStyle::BINARY, expression)
+    pub fn binary_on<E: KerfurExpression>(display: D, expression: E) -> Self {
+        Self::new_with_style(display, &crate::style::BINARY_ON, expression)
+    }
+
+    /// Create a new binary [`KerfurDisplay`].
+    ///
+    /// Uses the [`BINARY_OFF`](crate::style::BINARY_OFF) style.
+    #[inline]
+    pub fn binary_off<E: KerfurExpression>(display: D, expression: E) -> Self {
+        Self::new_with_style(display, &crate::style::BINARY_OFF, expression)
     }
 }
