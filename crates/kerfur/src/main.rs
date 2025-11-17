@@ -6,15 +6,19 @@
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
-use embassy_time::{Duration, Timer};
+use embassy_time::{Delay, Duration, Timer};
+use embedded_hal::spi::MODE_0;
 use esp_hal::{
     Async,
     gpio::{Level, Output, OutputConfig},
     i2c::master::{Config as I2cConfig, I2c},
-    spi::master::{Config as SpiConfig, Spi},
 };
+use kerfur_bitbang::BitBangSpi;
 use kerfur_gc9503::{Gc9503, Gc9503Channels, color::Rgb888};
-use kerfur_tca9554::Tca9554;
+use kerfur_tca9554::{
+    Tca9554,
+    pin::{TCA_P2, TCA_P3},
+};
 use static_cell::StaticCell;
 
 mod initialize;
@@ -23,7 +27,16 @@ mod initialize;
 async fn main(_s: Spawner) -> ! {
     static I2C: StaticCell<Mutex<NoopRawMutex, I2c<'static, Async>>> = StaticCell::new();
     static TCA: StaticCell<Tca9554<'static, NoopRawMutex, I2c<'static, Async>>> = StaticCell::new();
-    static SPI: StaticCell<Mutex<NoopRawMutex, Spi<'static, Async>>> = StaticCell::new();
+    static SPI: StaticCell<
+        Mutex<
+            NoopRawMutex,
+            BitBangSpi<
+                TCA_P3<NoopRawMutex, I2c<'static, Async>>,
+                TCA_P2<NoopRawMutex, I2c<'static, Async>>,
+                Delay,
+            >,
+        >,
+    > = StaticCell::new();
 
     // Initialize the device
     let p = initialize::init();
@@ -37,10 +50,9 @@ async fn main(_s: Spawner) -> ! {
     let tca = Tca9554::new(i2c, 0x0);
     let tca = TCA.init(tca);
 
-    // Initialize SPI using TCA9554 pins
-    let spi = Spi::new(p.SPI2, SpiConfig::default()).unwrap();
-    // spi = spi.with_sck(tca.p2).with_mosi(tca.p3);
-    let spi = SPI.init(Mutex::new(spi.into_async()));
+    // Bitbang SPI using TCA9554 pins
+    let spi = BitBangSpi::new(MODE_0, tca.p3.reborrow(), tca.p2.reborrow(), Delay);
+    let spi = SPI.init(Mutex::new(spi));
 
     // Initialize GC9503 display
     let _display = Gc9503::<Rgb888, _, _, _>::new(

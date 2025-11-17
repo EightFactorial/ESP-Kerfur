@@ -11,6 +11,7 @@ strip = "debuginfo"
 
 [workspace.dependencies]
 # Workspace
+kerfur-bitbang = { version = "0.0.1", default-features = false, path = "crates/kerfur-bitbang" }
 kerfur-display = { version = "0.0.1", default-features = false, path = "crates/kerfur-display" }
 kerfur-gc9503 = { version = "0.0.1", default-features = false, path = "crates/kerfur-gc9503" }
 kerfur-gt911 = { version = "0.0.1", default-features = false, path = "crates/kerfur-gt911" }

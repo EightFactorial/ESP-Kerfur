@@ -24,7 +24,7 @@ macro_rules! create_pin {
             /// Placeholder method.
             #[inline]
             pub fn placeholder<'a>(&'a mut self) -> impl Future<Output = ()> + 'a {
-                crate::action::placeholder::<_, _, Self>(self.i2c, self.addr)
+                crate::action::placeholder::<M, I2C, Self>(self.i2c, self.addr)
             }
         }
 

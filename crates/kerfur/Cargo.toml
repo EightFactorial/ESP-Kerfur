@@ -11,6 +11,7 @@ workspace = true
 
 [dependencies]
 # Workspace
+kerfur-bitbang = { workspace = true }
 kerfur-display = { workspace = true, features = ["libm"] }
 kerfur-gc9503 = { workspace = true, features = ["embedded-graphics"] }
 kerfur-gt911 = { workspace = true }
@@ -21,6 +22,7 @@ embassy-embedded-hal = { workspace = true }
 embassy-executor = { workspace = true }
 embassy-sync = { workspace = true }
 embassy-time = { workspace = true }
+embedded-hal = { workspace = true }
 # Espressif
 esp-alloc = { workspace = true }
 esp-backtrace = { workspace = true }
