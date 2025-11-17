@@ -4,7 +4,7 @@
 use core::fmt::Debug;
 
 use embedded_hal::{
-    digital::{ErrorType as DigitalErrorType, InputPin, OutputPin},
+    digital::{ErrorType as DigitalErrorType, OutputPin},
     spi::{MODE_0, MODE_1, MODE_2, MODE_3},
 };
 use embedded_hal_async::{
@@ -13,7 +13,7 @@ use embedded_hal_async::{
 };
 
 /// A bit-banged write-only SPI implementation.
-pub struct BitBangSpi<SCK: OutputPin, SDIO: InputPin + OutputPin, DELAY: DelayNs> {
+pub struct BitBangSpi<SCK: OutputPin, SDIO: OutputPin, DELAY: DelayNs> {
     sck: SCK,
     sdio: SDIO,
     delay: DELAY,
@@ -21,7 +21,7 @@ pub struct BitBangSpi<SCK: OutputPin, SDIO: InputPin + OutputPin, DELAY: DelayNs
     mode: Mode,
 }
 
-impl<SCK: OutputPin, SDIO: InputPin + OutputPin, DELAY: DelayNs> BitBangSpi<SCK, SDIO, DELAY> {
+impl<SCK: OutputPin, SDIO: OutputPin, DELAY: DelayNs> BitBangSpi<SCK, SDIO, DELAY> {
     /// Create a new [`BitBangSpi`].
     #[inline]
     #[must_use]
@@ -79,15 +79,13 @@ impl<SCK: OutputPin, SDIO: InputPin + OutputPin, DELAY: DelayNs> BitBangSpi<SCK,
 
 // -------------------------------------------------------------------------------------------------
 
-impl<SCK: OutputPin, SDIO: InputPin + OutputPin, DELAY: DelayNs> SpiErrorType
+impl<SCK: OutputPin, SDIO: OutputPin, DELAY: DelayNs> SpiErrorType
     for BitBangSpi<SCK, SDIO, DELAY>
 {
     type Error = SpiError<SCK, SDIO>;
 }
 
-impl<SCK: OutputPin, SDIO: InputPin + OutputPin, DELAY: DelayNs> SpiBus
-    for BitBangSpi<SCK, SDIO, DELAY>
-{
+impl<SCK: OutputPin, SDIO: OutputPin, DELAY: DelayNs> SpiBus for BitBangSpi<SCK, SDIO, DELAY> {
     #[inline]
     async fn read(&mut self, _: &mut [u8]) -> Result<(), Self::Error> { Err(SpiError::WriteOnly) }
 

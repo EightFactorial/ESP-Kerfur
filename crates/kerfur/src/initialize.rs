@@ -15,6 +15,9 @@ use esp_backtrace as _;
 // Use `esp_println` as the global logger.
 use esp_println as _;
 
+// Embed the application descriptor
+esp_bootloader_esp_idf::esp_app_desc!();
+
 // -------------------------------------------------------------------------------------------------
 
 /// Initialize the device.

@@ -31,6 +31,7 @@ esp-backtrace = { version = "0.18.1", features = ["defmt", "halt-cores", "panic-
 esp-hal = { version = "1.0.0", features = ["defmt", "unstable", "esp32s3"] }
 esp-println = { version = "0.16.1", features = ["defmt-espflash", "esp32s3"] }
 esp-rtos = { version = "0.2.0", features = ["defmt", "embassy", "esp-radio", "esp32s3"] }
+esp-bootloader-esp-idf = { version = "0.4.0", features = ["defmt", "esp32s3"] }
 
 # Other
 bitflags = { version = "2.10.0" }
@@ -111,15 +112,15 @@ trim = true
 
 [workspace.metadata.git-cliff.git]
 commit_parsers = [
-  { body = ".*security", group = "<!-- 8 -->🛡️ Security" },
-  { group = "<!-- 0 -->🚀 Features", message = "^feat" },
-  { group = "<!-- 1 -->🐛 Bug Fixes", message = "^fix" },
-  { group = "<!-- 2 -->🚜 Refactor", message = "^refactor" },
-  { group = "<!-- 3 -->📚 Documentation", message = "^doc" },
-  { group = "<!-- 4 -->⚡ Performance", message = "^perf" },
-  { group = "<!-- 5 -->🎨 Styling", message = "^style" },
-  { group = "<!-- 6 -->🧪 Testing", message = "^test" },
-  { group = "<!-- 7 -->◀️ Revert", message = "^revert" },
+  { body = ".*security", group = "<!-- 0 -->🛡️ Security" },
+  { group = "<!-- 1 -->🚀 Features", message = "^feat" },
+  { group = "<!-- 2 -->🐛 Bug Fixes", message = "^fix" },
+  { group = "<!-- 3 -->🚜 Refactor", message = "^refactor" },
+  { group = "<!-- 4 -->📚 Documentation", message = "^doc" },
+  { group = "<!-- 5 -->⚡ Performance", message = "^perf" },
+  { group = "<!-- 6 -->🎨 Styling", message = "^style" },
+  { group = "<!-- 7 -->🧪 Testing", message = "^test" },
+  { group = "<!-- 8 -->◀️ Revert", message = "^revert" },
   { message = "^chore|^ci", skip = true },
 ]
 commit_preprocessors = []
