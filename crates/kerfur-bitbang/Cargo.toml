@@ -10,6 +10,5 @@ version = { workspace = true }
 workspace = true
 
 [dependencies]
-embassy-sync = { workspace = true }
 embedded-hal = { workspace = true }
 embedded-hal-async = { workspace = true }

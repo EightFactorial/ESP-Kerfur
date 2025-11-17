@@ -31,8 +31,8 @@ async fn main(_s: Spawner) -> ! {
         Mutex<
             NoopRawMutex,
             BitBangSpi<
-                TCA_P3<NoopRawMutex, I2c<'static, Async>>,
                 TCA_P2<NoopRawMutex, I2c<'static, Async>>,
+                TCA_P3<NoopRawMutex, I2c<'static, Async>>,
                 Delay,
             >,
         >,
@@ -51,7 +51,7 @@ async fn main(_s: Spawner) -> ! {
     let tca = TCA.init(tca);
 
     // Bitbang SPI using TCA9554 pins
-    let spi = BitBangSpi::new(MODE_0, tca.p3.reborrow(), tca.p2.reborrow(), Delay);
+    let spi = BitBangSpi::new(tca.p2.reborrow(), tca.p3.reborrow(), Delay, 5, MODE_0);
     let spi = SPI.init(Mutex::new(spi));
 
     // Initialize GC9503 display
