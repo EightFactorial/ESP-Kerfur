@@ -1,76 +1,44 @@
-// use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
-// use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
-// use embassy_time::Delay;
-// use embedded_hal::spi::MODE_0;
-// use esp_hal::{
-//     Async,
-//     gpio::{Level, Output, OutputConfig},
-//     i2c::master::{Config as I2cConfig, I2c},
-// };
-// use kerfur_bitbang::BitBangSpi;
-// use kerfur_gc9503::{Gc9503, Gc9503Channels, color::Rgb888};
-// use kerfur_tca9554::{
-//     Tca9554,
-//     pin::{TCA_P2, TCA_P3},
-// };
-// use static_cell::StaticCell;
+use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
+use embassy_sync::blocking_mutex::raw::NoopRawMutex;
+use embassy_time::{Duration, Timer};
+use esp_hal::gpio::{AnyPin, Level, Output, OutputConfig};
+use kerfur_gc9503::{Gc9503, Gc9503Channels, color::Rgb888};
+use kerfur_tca9554::pin::TCA_P1;
 
+use super::{AsyncI2C, SPI};
+
+/// A task that handles drawing to the display.
 #[embassy_executor::task]
-pub(super) async fn task() {
-    // static I2C: StaticCell<Mutex<NoopRawMutex, I2c<'static, Async>>> = StaticCell::new();
-    // static TCA: StaticCell<Tca9554<'static, NoopRawMutex, I2c<'static, Async>>> = StaticCell::new();
-    // static SPI: StaticCell<
-    //     Mutex<
-    //         NoopRawMutex,
-    //         BitBangSpi<
-    //             TCA_P2<NoopRawMutex, I2c<'static, Async>>,
-    //             TCA_P3<NoopRawMutex, I2c<'static, Async>>,
-    //             Delay,
-    //         >,
-    //     >,
-    // > = StaticCell::new();
+pub(super) async fn task(spi: &'static SPI, p: DisplayPeripherals<'static>) -> ! {
+    defmt::info!("Preparing display...");
 
-    // // Initialize I2C
-    // let mut i2c = I2c::new(peripherals.I2C0, I2cConfig::default()).unwrap();
-    // i2c = i2c.with_sda(peripherals.GPIO8).with_scl(peripherals.GPIO18);
-    // let i2c = I2C.init(Mutex::new(i2c.into_async()));
+    // Initialize GC9503 display
+    let _display: Gc9503<Rgb888, _, Output<'static>> = Gc9503::new(
+        SpiDevice::new(spi, p.chip_select),
+        Gc9503Channels {
+            enable: Output::new(p.display_enable, Level::Low, OutputConfig::default()),
+            p_clck: Output::new(p.display_clock, Level::Low, OutputConfig::default()),
+            v_sync: Output::new(p.display_vsync, Level::Low, OutputConfig::default()),
+            h_sync: Output::new(p.display_hsync, Level::Low, OutputConfig::default()),
+            display: None,
+            display_data: p
+                .display_data
+                .map(|pin| Output::new(pin, Level::Low, OutputConfig::default())),
+        },
+    );
 
-    // // Initialize TCA9554 IO expander
-    // let tca = Tca9554::new(i2c, 0x0);
-    // let tca = TCA.init(tca);
+    loop {
+        Timer::after(Duration::MAX).await;
+    }
+}
 
-    // // Bitbang SPI using TCA9554 pins
-    // let spi = BitBangSpi::new(tca.p2.reborrow(), tca.p3.reborrow(), Delay, 5, MODE_0);
-    // let spi = SPI.init(Mutex::new(spi));
+// -------------------------------------------------------------------------------------------------
 
-    // // Initialize GC9503 display
-    // let _display = Gc9503::<Rgb888, _, _, _>::new(
-    //     SpiDevice::new(spi, tca.p1.reborrow()),
-    //     Output::new(peripherals.GPIO0, Level::Low, OutputConfig::default()),
-    //     Gc9503Channels {
-    //         enable: Output::new(peripherals.GPIO17, Level::Low, OutputConfig::default()),
-    //         p_clck: Output::new(peripherals.GPIO9, Level::Low, OutputConfig::default()),
-    //         v_sync: Output::new(peripherals.GPIO3, Level::Low, OutputConfig::default()),
-    //         h_sync: Output::new(peripherals.GPIO46, Level::Low, OutputConfig::default()),
-    //         display: None,
-    //         display_data: [
-    //             Output::new(peripherals.GPIO10, Level::Low, OutputConfig::default()),
-    //             Output::new(peripherals.GPIO11, Level::Low, OutputConfig::default()),
-    //             Output::new(peripherals.GPIO12, Level::Low, OutputConfig::default()),
-    //             Output::new(peripherals.GPIO13, Level::Low, OutputConfig::default()),
-    //             Output::new(peripherals.GPIO14, Level::Low, OutputConfig::default()),
-    //             Output::new(peripherals.GPIO21, Level::Low, OutputConfig::default()),
-    //             Output::new(peripherals.GPIO47, Level::Low, OutputConfig::default()),
-    //             Output::new(peripherals.GPIO48, Level::Low, OutputConfig::default()),
-    //             Output::new(peripherals.GPIO45, Level::Low, OutputConfig::default()),
-    //             Output::new(peripherals.GPIO38, Level::Low, OutputConfig::default()),
-    //             Output::new(peripherals.GPIO39, Level::Low, OutputConfig::default()),
-    //             Output::new(peripherals.GPIO40, Level::Low, OutputConfig::default()),
-    //             Output::new(peripherals.GPIO41, Level::Low, OutputConfig::default()),
-    //             Output::new(peripherals.GPIO42, Level::Low, OutputConfig::default()),
-    //             Output::new(peripherals.GPIO1, Level::Low, OutputConfig::default()),
-    //             Output::new(peripherals.GPIO2, Level::Low, OutputConfig::default()),
-    //         ],
-    //     },
-    // );
+pub(super) struct DisplayPeripherals<'a> {
+    pub(super) chip_select: TCA_P1<'a, NoopRawMutex, AsyncI2C<'a>>,
+    pub(super) display_enable: AnyPin<'a>,
+    pub(super) display_clock: AnyPin<'a>,
+    pub(super) display_vsync: AnyPin<'a>,
+    pub(super) display_hsync: AnyPin<'a>,
+    pub(super) display_data: [AnyPin<'a>; 16],
 }

@@ -4,15 +4,13 @@ use embedded_hal_async::spi::SpiDevice;
 
 use crate::{Gc9503, color::Gc9503Color};
 
-impl<CLR: Gc9503Color, SPI: SpiDevice, DC: OutputPin, CHNL: OutputPin> OriginDimensions
-    for Gc9503<CLR, SPI, DC, CHNL>
+impl<CLR: Gc9503Color, SPI: SpiDevice, CHNL: OutputPin> OriginDimensions
+    for Gc9503<CLR, SPI, CHNL>
 {
     fn size(&self) -> Size { Size::new_equal(480) }
 }
 
-impl<CLR: Gc9503Color, SPI: SpiDevice, DC: OutputPin, CHNL: OutputPin> DrawTarget
-    for Gc9503<CLR, SPI, DC, CHNL>
-{
+impl<CLR: Gc9503Color, SPI: SpiDevice, CHNL: OutputPin> DrawTarget for Gc9503<CLR, SPI, CHNL> {
     type Color = CLR;
     type Error = ();
 

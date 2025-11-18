@@ -33,5 +33,4 @@ esp-rtos = { workspace = true }
 
 # Other
 defmt = { workspace = true }
-port-expander = { workspace = true }
 static_cell = { workspace = true }

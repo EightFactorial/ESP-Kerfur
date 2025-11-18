@@ -1,3 +1,6 @@
+[env]
+DEFMT_LOG = "info"
+
 [target.'cfg(target_arch = "xtensa")']
 runner = "espflash flash --monitor --baud=921600"
 rustflags = [

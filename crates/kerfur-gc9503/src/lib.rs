@@ -3,7 +3,6 @@
 
 use core::marker::PhantomData;
 
-use display_interface_spi::SPIInterface;
 use embedded_hal::digital::OutputPin;
 use embedded_hal_async::spi::SpiDevice;
 
@@ -14,29 +13,29 @@ use color::Gc9503Color;
 mod graphics;
 
 /// A driver for the GC9503 display controller.
-pub struct Gc9503<CLR: Gc9503Color, SPI: SpiDevice, DC: OutputPin, CHNL: OutputPin> {
-    interface: SPIInterface<SPI, DC>,
+pub struct Gc9503<CLR: Gc9503Color, SPI: SpiDevice, CHNL: OutputPin> {
+    device: SPI,
     channels: Gc9503Channels<CHNL>,
     _color: PhantomData<CLR>,
 }
 
-impl<CLR: Gc9503Color, SPI: SpiDevice, DC: OutputPin, CHNL: OutputPin> Gc9503<CLR, SPI, DC, CHNL> {
+impl<CLR: Gc9503Color, SPI: SpiDevice, CHNL: OutputPin> Gc9503<CLR, SPI, CHNL> {
     /// Create a new [`Gc9503`] driver instance.
     #[inline]
     #[must_use]
-    pub fn new(spi: SPI, dc: DC, channels: Gc9503Channels<CHNL>) -> Self {
-        Self { interface: SPIInterface::new(spi, dc), channels, _color: PhantomData }
+    pub fn new(device: SPI, channels: Gc9503Channels<CHNL>) -> Self {
+        Self { device, channels, _color: PhantomData }
     }
 
-    /// Get a reference to the inner [`SPIInterface`].
+    /// Get a reference to the inner spi device.
     #[inline]
     #[must_use]
-    pub const fn interface(&self) -> &SPIInterface<SPI, DC> { &self.interface }
+    pub const fn device(&self) -> &SPI { &self.device }
 
-    /// Get a mutable reference to the inner [`SPIInterface`].
+    /// Get a mutable reference to the inner spi device.
     #[inline]
     #[must_use]
-    pub const fn interface_mut(&mut self) -> &mut SPIInterface<SPI, DC> { &mut self.interface }
+    pub const fn device_mut(&mut self) -> &mut SPI { &mut self.device }
 
     /// Get a reference to the display channels.
     #[inline]
@@ -51,10 +50,7 @@ impl<CLR: Gc9503Color, SPI: SpiDevice, DC: OutputPin, CHNL: OutputPin> Gc9503<CL
     /// Release the inner SPI device, DC pin, and display pins.
     #[inline]
     #[must_use]
-    pub fn release(self) -> (SPI, DC, Gc9503Channels<CHNL>) {
-        let (spi, dc) = self.interface.release();
-        (spi, dc, self.channels)
-    }
+    pub fn release(self) -> (SPI, Gc9503Channels<CHNL>) { (self.device, self.channels) }
 }
 
 /// The display pins for the [`Gc9503`] driver.
