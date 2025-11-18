@@ -1,7 +1,10 @@
+//! TODO
+
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
-use embassy_time::{Duration, Timer};
+use embassy_time::Timer;
 use esp_hal::gpio::{AnyPin, Level, Output, OutputConfig};
+use kerfur_display::{KerfurDisplay, KerfurEmote};
 use kerfur_gc9503::{Gc9503, Gc9503Channels, color::Rgb888};
 use kerfur_tca9554::pin::TCA_P1;
 
@@ -13,7 +16,7 @@ pub(super) async fn task(spi: &'static SPI, p: DisplayPeripherals<'static>) -> !
     defmt::info!("Preparing display...");
 
     // Initialize GC9503 display
-    let _display: Gc9503<Rgb888, _, Output<'static>> = Gc9503::new(
+    let display: Gc9503<Rgb888, _, Output<'static>> = Gc9503::new(
         SpiDevice::new(spi, p.chip_select),
         Gc9503Channels {
             enable: Output::new(p.display_enable, Level::Low, OutputConfig::default()),
@@ -27,8 +30,22 @@ pub(super) async fn task(spi: &'static SPI, p: DisplayPeripherals<'static>) -> !
         },
     );
 
+    // Wrap the display in a KerfurDisplay
+    let mut kerfur: KerfurDisplay<'static, _> = KerfurDisplay::blue(display, KerfurEmote::Neutral);
+
     loop {
-        Timer::after(Duration::MAX).await;
+        // Draw to the display
+        if let Err(err) = kerfur.draw(5.0) {
+            defmt::error!("Failed to draw to display, {}", err);
+            Timer::after_secs(5).await;
+            defmt::warn!("Resuming display task...");
+            continue;
+        }
+
+        // If the display isn't animating, wait for a new expression
+        if !kerfur.is_animating() {
+            todo!()
+        }
     }
 }
 

@@ -96,7 +96,7 @@ async fn app(s: Spawner, p: AppPeripherals<'static>) -> ! {
         },
     ));
 
-    // Spawn the display touch task
+    // Spawn the touch sensor task
     s.must_spawn(display_touch::task(i2c));
 
     loop {
@@ -108,12 +108,12 @@ async fn app(s: Spawner, p: AppPeripherals<'static>) -> ! {
 
 /// The [`Peripherals`](esp_hal::Peripherals) available to the application core.
 pub(crate) struct AppPeripherals<'a> {
-    // I2C, SDA, and SCL
+    // I2C for TCA9554 and Touch Sensor
     pub(crate) i2c: AnyI2c<'a>,
     pub(crate) i2c_sda: AnyPin<'a>,
     pub(crate) i2c_scl: AnyPin<'a>,
 
-    // SPI Display
+    // Pins for SPI Display
     pub(crate) display_enable: AnyPin<'a>,
     pub(crate) display_clock: AnyPin<'a>,
     pub(crate) display_vsync: AnyPin<'a>,

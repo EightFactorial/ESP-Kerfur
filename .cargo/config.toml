@@ -2,7 +2,7 @@
 DEFMT_LOG = "info"
 
 [target.'cfg(target_arch = "xtensa")']
-runner = "espflash flash --monitor --baud=921600"
+runner = "espflash flash --baud=921600 --log-format=defmt --monitor"
 rustflags = [
   # Tell the `core` library that we have atomics, even though it's not
   # specified in the target definition

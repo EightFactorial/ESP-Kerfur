@@ -55,7 +55,15 @@ async fn main(spawner: Spawner) {
                 peripherals.GPIO2.into(),
             ],
         },
-        ProPeripherals {},
+        ProPeripherals {
+            i2s: peripherals.I2S0.into(),
+            i2s_dma: peripherals.DMA_CH0,
+            i2s_sclock: peripherals.GPIO16.into(),
+            i2s_mclock: peripherals.GPIO5.into(),
+            i2s_lclock: peripherals.GPIO7.into(),
+            i2s_dataout: peripherals.GPIO6.into(),
+            i2s_soundin: peripherals.GPIO15.into(),
+        },
     );
 
     // Start the app task

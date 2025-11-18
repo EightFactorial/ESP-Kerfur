@@ -1,4 +1,7 @@
 [default.extend-words]
+# Fix common misspellings of "kerfur"
 kerfus = "kerfur"
 kurfur = "kerfur"
 kurfus = "kerfur"
+# Stop trying to fix these
+dout = "dout"
