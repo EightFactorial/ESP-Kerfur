@@ -20,14 +20,15 @@ use kerfur_tca9554::{
 };
 use static_cell::StaticCell;
 
+mod audio;
 mod display;
-mod display_touch;
+mod touch;
 
 /// Create an [`Executor`] and run tasks on the application core.
 #[expect(static_mut_refs, reason = "Required to access mutable statics")]
 pub(super) fn spawn(mut control: CpuControl, peripherals: AppPeripherals<'static>) {
     static GUARD: StaticCell<AppCoreGuard<'static>> = StaticCell::new();
-    static mut STACK: Stack<{ 1024 * 16 }> = Stack::new();
+    static mut STACK: Stack<{ 16 * 1024 }> = Stack::new();
     static mut EXECUTOR: Executor = Executor::new();
 
     defmt::info!("Starting application core...");
@@ -83,6 +84,9 @@ async fn app(s: Spawner, p: AppPeripherals<'static>) -> ! {
     let spi = BitBangSpi::new(tca.p2.reborrow(), tca.p3.reborrow(), Delay, 5, MODE_0);
     let spi = SPI.init(Mutex::new(spi));
 
+    // Spawn the audio task
+    s.must_spawn(audio::task(i2c));
+
     // Spawn the display task
     s.must_spawn(display::task(
         spi,
@@ -97,7 +101,7 @@ async fn app(s: Spawner, p: AppPeripherals<'static>) -> ! {
     ));
 
     // Spawn the touch sensor task
-    s.must_spawn(display_touch::task(i2c));
+    s.must_spawn(touch::task(i2c));
 
     loop {
         Timer::after(Duration::MAX).await;

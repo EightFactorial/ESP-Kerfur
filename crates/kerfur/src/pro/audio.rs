@@ -15,7 +15,10 @@ use esp_hal::{
 /// A task that handles listening to and playing audio.
 #[embassy_executor::task]
 pub(super) async fn task(p: AudioPeripherals<'static>) -> ! {
-    defmt::info!("Preparing speaker...");
+    // Wait until the audio peripherals are configured
+    crate::signal::AUDIO_ENABLE.wait().await;
+
+    defmt::info!("Preparing microphone and speakers...");
 
     // Create DMA buffers
     let (_rx_buf, rx_desc, _tx_buf, tx_desc) = dma_buffers!(4 * 1024);

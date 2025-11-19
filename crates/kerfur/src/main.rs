@@ -3,6 +3,8 @@
 #![no_main]
 #![no_std]
 
+extern crate alloc;
+
 use embassy_executor::Spawner;
 use esp_hal::{system::CpuControl, timer::timg::TimerGroup};
 
@@ -11,6 +13,7 @@ use crate::{app::AppPeripherals, pro::ProPeripherals};
 mod app;
 mod initialize;
 mod pro;
+mod signal;
 mod utility;
 
 #[esp_rtos::main]

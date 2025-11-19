@@ -13,6 +13,8 @@ strip = "debuginfo"
 # Workspace
 kerfur-bitbang = { version = "0.0.1", default-features = false, path = "crates/kerfur-bitbang" }
 kerfur-display = { version = "0.0.1", default-features = false, path = "crates/kerfur-display" }
+kerfur-es7210 = { version = "0.0.1", default-features = false, path = "crates/kerfur-es7210" }
+kerfur-es8311 = { version = "0.0.1", default-features = false, path = "crates/kerfur-es8311" }
 kerfur-gc9503 = { version = "0.0.1", default-features = false, path = "crates/kerfur-gc9503" }
 kerfur-gt911 = { version = "0.0.1", default-features = false, path = "crates/kerfur-gt911" }
 kerfur-tca9554 = { version = "0.0.1", default-features = false, path = "crates/kerfur-tca9554" }

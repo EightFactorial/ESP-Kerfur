@@ -13,6 +13,8 @@ workspace = true
 # Workspace
 kerfur-bitbang = { workspace = true }
 kerfur-display = { workspace = true, features = ["libm"] }
+kerfur-es7210 = { workspace = true }
+kerfur-es8311 = { workspace = true }
 kerfur-gc9503 = { workspace = true, features = ["embedded-graphics"] }
 kerfur-gt911 = { workspace = true }
 kerfur-tca9554 = { workspace = true }
