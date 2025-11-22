@@ -13,11 +13,14 @@ strip = "debuginfo"
 # Workspace
 kerfur-bitbang = { version = "0.0.1", default-features = false, path = "crates/kerfur-bitbang" }
 kerfur-display = { version = "0.0.1", default-features = false, path = "crates/kerfur-display" }
-kerfur-es7210 = { version = "0.0.1", default-features = false, path = "crates/kerfur-es7210" }
-kerfur-es8311 = { version = "0.0.1", default-features = false, path = "crates/kerfur-es8311" }
-kerfur-gc9503 = { version = "0.0.1", default-features = false, path = "crates/kerfur-gc9503" }
-kerfur-gt911 = { version = "0.0.1", default-features = false, path = "crates/kerfur-gt911" }
 kerfur-tca9554 = { version = "0.0.1", default-features = false, path = "crates/kerfur-tca9554" }
+
+# Driver Workspace
+es7210-driver = { version = "0.0.1", default-features = false, path = "drivers/crates/es7210-driver" }
+es8311-driver = { version = "0.0.1", default-features = false, path = "drivers/crates/es8311-driver" }
+gc9503-driver = { version = "0.0.1", default-features = false, path = "drivers/crates/gc9503-driver" }
+gt911-driver = { version = "0.0.1", default-features = false, path = "drivers/crates/gt911-driver" }
+tca9554-driver = { version = "0.0.1", default-features = false, path = "drivers/crates/tca9554-driver" }
 
 # Embassy/Embedded
 embassy-embedded-hal = { version = "0.5.0", features = ["defmt", "time"] }
@@ -32,6 +35,7 @@ esp-alloc = { version = "0.9.0", features = ["defmt", "nightly", "esp32s3"] }
 esp-backtrace = { version = "0.18.1", features = ["defmt", "halt-cores", "panic-handler", "esp32s3"] }
 esp-hal = { version = "1.0.0", features = ["defmt", "unstable", "esp32s3"] }
 esp-println = { version = "0.16.1", features = ["defmt-espflash", "esp32s3"] }
+esp-radio = { version = "0.17.0", features = ["defmt", "esp-alloc", "unstable", "wifi", "esp32s3"] }
 esp-rtos = { version = "0.2.0", features = ["defmt", "embassy", "esp-radio", "esp32s3"] }
 esp-bootloader-esp-idf = { version = "0.4.0", features = ["defmt", "esp32s3"] }
 

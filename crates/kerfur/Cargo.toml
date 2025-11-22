@@ -13,11 +13,13 @@ workspace = true
 # Workspace
 kerfur-bitbang = { workspace = true }
 kerfur-display = { workspace = true, features = ["libm"] }
-kerfur-es7210 = { workspace = true }
-kerfur-es8311 = { workspace = true }
-kerfur-gc9503 = { workspace = true, features = ["embedded-graphics"] }
-kerfur-gt911 = { workspace = true }
-kerfur-tca9554 = { workspace = true }
+
+# Driver Workspace
+es7210-driver = { workspace = true, features = ["defmt"] }
+es8311-driver = { workspace = true, features = ["defmt"] }
+gc9503-driver = { workspace = true, features = ["defmt", "embedded-graphics"] }
+gt911-driver = { workspace = true, features = ["defmt"] }
+tca9554-driver = { workspace = true, features = ["defmt", "embassy"] }
 
 # Embassy/Embedded
 embassy-embedded-hal = { workspace = true }
@@ -31,6 +33,7 @@ esp-backtrace = { workspace = true }
 esp-bootloader-esp-idf = { workspace = true }
 esp-hal = { workspace = true }
 esp-println = { workspace = true }
+esp-radio = { workspace = true }
 esp-rtos = { workspace = true }
 
 # Other
