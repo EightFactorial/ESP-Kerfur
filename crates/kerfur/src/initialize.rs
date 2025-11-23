@@ -3,8 +3,8 @@
 //! Imports required globals, initializes the allocator, and sets up the microcontroller.
 #![cfg_attr(rustfmt, rustfmt_skip)]
 
-use esp_hal::{Config, clock::CpuClock, peripherals::Peripherals};
-use esp_alloc::heap_allocator;
+use esp_hal::{Config, clock::CpuClock, peripherals::Peripherals, psram::{PsramConfig, SpiRamFreq}};
+use esp_alloc::psram_allocator;
 
 // Use `embassy_time` for `defmt` timestamps.
 use embassy_time as _;
@@ -22,9 +22,12 @@ esp_bootloader_esp_idf::esp_app_desc!();
 
 /// Initialize the device.
 pub(super) fn init() -> Peripherals {
-    // Initialize the heap allocator
-    heap_allocator!(size: 64 * 1000);
-
     // Initialize the microcontroller
-    esp_hal::init(Config::default().with_cpu_clock(CpuClock::max()))
+    let config = PsramConfig { ram_frequency: SpiRamFreq::Freq80m,  ..PsramConfig::default() };
+    let peripherals = esp_hal::init(Config::default().with_cpu_clock(CpuClock::max()).with_psram(config));
+
+    // Initialize the psram allocator
+    psram_allocator!(peripherals.PSRAM, esp_hal::psram);
+
+    peripherals
 }

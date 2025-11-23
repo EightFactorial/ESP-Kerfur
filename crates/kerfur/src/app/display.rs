@@ -7,7 +7,6 @@ use embassy_time::{Duration, Timer};
 use esp_hal::{
     dma_buffers,
     gpio::{AnyPin, Level, Output, OutputConfig},
-    peripherals::DMA_CH0,
 };
 use kerfur_display::{KerfurDisplay, KerfurEmote};
 
@@ -17,8 +16,6 @@ use super::SPI;
 #[embassy_executor::task]
 pub(super) async fn task(spi: &'static SPI, p: DisplayPeripherals<'static>) -> ! {
     defmt::info!("Preparing display...");
-
-    let (_, _, _tx_buf, _tx_desc) = dma_buffers!(0, 8 * 3 * 480 * 480);
 
     // Create a ST7701S display driver
     let _device = SpiDevice::new(spi, p.display_cs);
@@ -63,7 +60,6 @@ pub(super) async fn task(spi: &'static SPI, p: DisplayPeripherals<'static>) -> !
 pub(crate) enum DisplayCommand {}
 
 pub(super) struct DisplayPeripherals<'a> {
-    pub(crate) display_dma: DMA_CH0<'a>,
     pub(crate) display_cs: AnyPin<'a>,
     pub(crate) display_enable: AnyPin<'a>,
     pub(crate) display_backlight: AnyPin<'a>,

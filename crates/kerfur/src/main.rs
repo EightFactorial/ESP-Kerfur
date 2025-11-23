@@ -31,6 +31,7 @@ async fn main(spawner: Spawner) {
             i2c: peripherals.I2C0.into(),
             i2c_sda: peripherals.GPIO19.into(),
             i2c_scl: peripherals.GPIO45.into(),
+            i2c_dma: peripherals.DMA_CH0,
 
             spi: peripherals.SPI2.into(),
             spi_sclk: peripherals.GPIO48.into(),
@@ -39,7 +40,6 @@ async fn main(spawner: Spawner) {
             display_cs: peripherals.GPIO39.into(),
             _sdcard_cs: peripherals.GPIO42.into(),
 
-            display_dma: peripherals.DMA_CH0,
             display_enable: peripherals.GPIO18.into(),
             display_backlight: peripherals.GPIO38.into(),
             display_clock: peripherals.GPIO21.into(),
