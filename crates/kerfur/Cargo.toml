@@ -11,15 +11,13 @@ workspace = true
 
 [dependencies]
 # Workspace
-kerfur-bitbang = { workspace = true }
 kerfur-display = { workspace = true, features = ["libm"] }
 
 # Driver Workspace
 es7210-driver = { workspace = true, features = ["defmt"] }
 es8311-driver = { workspace = true, features = ["defmt"] }
-gc9503-driver = { workspace = true, features = ["defmt", "embedded-graphics"] }
 gt911-driver = { workspace = true, features = ["defmt"] }
-tca9554-driver = { workspace = true, features = ["defmt", "embassy"] }
+st7701s-driver = { workspace = true, features = ["defmt", "embedded-graphics"] }
 
 # Embassy/Embedded
 embassy-embedded-hal = { workspace = true }

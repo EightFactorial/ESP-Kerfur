@@ -1,10 +1,8 @@
 //! TODO
 
-use alloc::vec::Vec;
-
 use embassy_embedded_hal::shared_bus::asynch::i2c::I2cDevice;
 use embassy_time::{Duration, Timer};
-use kerfur_gt911::Gt911;
+use gt911_driver::{GT911, GT911Error};
 
 use super::I2C;
 
@@ -17,42 +15,42 @@ pub(super) async fn task(i2c: &'static I2C) -> ! {
     defmt::info!("Preparing touch sensor...");
 
     // Create a GT911 touch sensor driver
-    let mut touch = Gt911::new(I2cDevice::new(i2c), GT911_ADDRESS);
+    let mut touch = GT911::new(I2cDevice::new(i2c), GT911_ADDRESS);
 
     // Initialize touch sensor
-    let mut result = touch.init().await;
+    let mut result = touch.init_async().await;
     while let Err(err) = result {
-        defmt::error!("Failed to initialize touch sensor, {}", err);
-        Timer::after(Duration::from_secs(5)).await;
-        result = touch.init().await;
+        if let GT911Error::DeviceNotReady(status) = &err {
+            defmt::warn!("Touch sensor not ready, status: {:#010b}", status.bits());
+        } else {
+            defmt::error!("Failed to initialize touch sensor, {}", err);
+        }
+        Timer::after(Duration::from_millis(100)).await;
+        result = touch.init_async().await;
     }
     defmt::info!("Touch sensor initialized!");
 
-    let mut points = Vec::with_capacity(6);
-
     loop {
         // Query for all touch points
-        match touch.touch_list(points).await {
-            Ok(updated) => {
-                points = updated;
+        match touch.query_touch_all_async().await {
+            Ok(points) => {
+                for point in points {
+                    if let Some(point) = point {
+                        defmt::info!(
+                            "Touch ID: {}, X: {}, Y: {}, A: {}",
+                            point.point,
+                            point.x,
+                            point.y,
+                            point.area
+                        );
+                    }
+                }
             }
-            Err((failed, err)) => {
-                defmt::error!("Failed to read touch points, {}", err);
-                points = failed;
-                points.clear();
+            Err(err) => {
+                defmt::error!("Failed to read gesture, {}", err);
             }
         }
 
-        for point in &points {
-            defmt::info!(
-                "Touch ID: {}, X: {}, Y: {}, A: {}",
-                point.point_id,
-                point.x,
-                point.y,
-                point.area
-            );
-        }
-
-        Timer::after(Duration::from_secs(5)).await;
+        Timer::after(Duration::from_millis(25)).await;
     }
 }

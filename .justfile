@@ -7,7 +7,7 @@ changelog path="CHANGELOG.md":
 
 # Run the clippy linter
 clippy:
-    cargo clippy --workspace -- -D warnings
+    cargo clippy --workspace --target={{ESP_TARGET}} {{ESP_CFG}} -- -D warnings
 
 # Build the project
 build mode="release":

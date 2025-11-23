@@ -3,10 +3,8 @@
 #![no_main]
 #![no_std]
 
-extern crate alloc;
-
 use embassy_executor::Spawner;
-use esp_hal::{system::CpuControl, timer::timg::TimerGroup};
+use esp_hal::{interrupt::software::SoftwareInterruptControl, timer::timg::TimerGroup};
 
 use crate::{app::AppPeripherals, pro::ProPeripherals};
 
@@ -28,49 +26,57 @@ async fn main(spawner: Spawner) {
     defmt::info!("Started scheduler");
 
     // Create the CpuControl and peripheral structs
-    let control = CpuControl::new(peripherals.CPU_CTRL);
     let (app, pro) = (
         AppPeripherals {
             i2c: peripherals.I2C0.into(),
-            i2c_sda: peripherals.GPIO8.into(),
-            i2c_scl: peripherals.GPIO18.into(),
+            i2c_sda: peripherals.GPIO19.into(),
+            i2c_scl: peripherals.GPIO45.into(),
 
-            display_enable: peripherals.GPIO17.into(),
-            display_clock: peripherals.GPIO9.into(),
-            display_vsync: peripherals.GPIO3.into(),
-            display_hsync: peripherals.GPIO46.into(),
+            spi: peripherals.SPI2.into(),
+            spi_sclk: peripherals.GPIO48.into(),
+            spi_mosi: peripherals.GPIO47.into(),
+            spi_miso: peripherals.GPIO41.into(),
+            display_cs: peripherals.GPIO39.into(),
+            _sdcard_cs: peripherals.GPIO42.into(),
+
+            display_enable: peripherals.GPIO18.into(),
+            display_backlight: peripherals.GPIO38.into(),
+            display_clock: peripherals.GPIO21.into(),
+            display_vsync: peripherals.GPIO17.into(),
+            display_hsync: peripherals.GPIO16.into(),
             display_data: [
-                peripherals.GPIO10.into(),
                 peripherals.GPIO11.into(),
                 peripherals.GPIO12.into(),
                 peripherals.GPIO13.into(),
                 peripherals.GPIO14.into(),
-                peripherals.GPIO21.into(),
-                peripherals.GPIO47.into(),
-                peripherals.GPIO48.into(),
-                peripherals.GPIO45.into(),
-                peripherals.GPIO38.into(),
-                peripherals.GPIO39.into(),
-                peripherals.GPIO40.into(),
-                peripherals.GPIO41.into(),
-                peripherals.GPIO42.into(),
-                peripherals.GPIO1.into(),
-                peripherals.GPIO2.into(),
+                peripherals.GPIO0.into(),
+                peripherals.GPIO8.into(),
+                peripherals.GPIO20.into(),
+                peripherals.GPIO3.into(),
+                peripherals.GPIO46.into(),
+                peripherals.GPIO9.into(),
+                peripherals.GPIO10.into(),
+                peripherals.GPIO4.into(),
+                peripherals.GPIO5.into(),
+                peripherals.GPIO6.into(),
+                peripherals.GPIO7.into(),
+                peripherals.GPIO15.into(),
             ],
         },
         ProPeripherals {
             i2s: peripherals.I2S0.into(),
             i2s_dma: peripherals.DMA_CH0,
-            i2s_sclock: peripherals.GPIO16.into(),
-            i2s_mclock: peripherals.GPIO5.into(),
-            i2s_lclock: peripherals.GPIO7.into(),
-            i2s_dataout: peripherals.GPIO6.into(),
-            i2s_soundin: peripherals.GPIO15.into(),
+            // i2s_sclock: peripherals.GPIO16.into(),
+            // i2s_mclock: peripherals.GPIO5.into(),
+            // i2s_lclock: peripherals.GPIO7.into(),
+            // i2s_dataout: peripherals.GPIO6.into(),
+            // i2s_soundin: peripherals.GPIO15.into(),
         },
     );
 
     // Start the app task
-    app::spawn(control, app);
+    let int = SoftwareInterruptControl::new(peripherals.SW_INTERRUPT);
+    app::spawn(peripherals.CPU_CTRL, int.software_interrupt0, int.software_interrupt1, app);
     // Start the pro task
     pro::spawn(spawner, pro);
 }
