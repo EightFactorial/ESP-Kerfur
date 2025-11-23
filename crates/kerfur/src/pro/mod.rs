@@ -4,7 +4,7 @@
 
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
-use esp_hal::{i2s::AnyI2s, peripherals::DMA_CH0};
+use esp_hal::{i2s::AnyI2s, peripherals::DMA_CH1};
 
 mod audio;
 
@@ -43,7 +43,7 @@ async fn pro(s: Spawner, p: ProPeripherals<'static>) -> ! {
 pub(crate) struct ProPeripherals<'a> {
     // I2S and DMA for Microphone and Speaker
     pub(super) i2s: AnyI2s<'a>,
-    pub(super) i2s_dma: DMA_CH0<'a>,
+    pub(super) i2s_dma: DMA_CH1<'a>,
     // pub(super) i2s_sclock: AnyPin<'a>,
     // pub(super) i2s_mclock: AnyPin<'a>,
     // pub(super) i2s_lclock: AnyPin<'a>,

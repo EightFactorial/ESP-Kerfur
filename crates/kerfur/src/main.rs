@@ -25,7 +25,7 @@ async fn main(spawner: Spawner) {
     esp_rtos::start(timg0.timer0);
     defmt::info!("Started scheduler");
 
-    // Create the CpuControl and peripheral structs
+    // Create peripheral structs
     let (app, pro) = (
         AppPeripherals {
             i2c: peripherals.I2C0.into(),
@@ -39,6 +39,7 @@ async fn main(spawner: Spawner) {
             display_cs: peripherals.GPIO39.into(),
             _sdcard_cs: peripherals.GPIO42.into(),
 
+            display_dma: peripherals.DMA_CH0,
             display_enable: peripherals.GPIO18.into(),
             display_backlight: peripherals.GPIO38.into(),
             display_clock: peripherals.GPIO21.into(),
@@ -65,7 +66,7 @@ async fn main(spawner: Spawner) {
         },
         ProPeripherals {
             i2s: peripherals.I2S0.into(),
-            i2s_dma: peripherals.DMA_CH0,
+            i2s_dma: peripherals.DMA_CH1,
             // i2s_sclock: peripherals.GPIO16.into(),
             // i2s_mclock: peripherals.GPIO5.into(),
             // i2s_lclock: peripherals.GPIO7.into(),
@@ -77,6 +78,7 @@ async fn main(spawner: Spawner) {
     // Start the app task
     let int = SoftwareInterruptControl::new(peripherals.SW_INTERRUPT);
     app::spawn(peripherals.CPU_CTRL, int.software_interrupt0, int.software_interrupt1, app);
+
     // Start the pro task
     pro::spawn(spawner, pro);
 }

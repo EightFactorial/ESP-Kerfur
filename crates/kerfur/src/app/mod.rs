@@ -4,14 +4,17 @@
 
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
-use embassy_time::{Duration, Timer};
+use embassy_time::Timer;
 use esp_hal::{
     Async,
     gpio::AnyPin,
     i2c::master::{AnyI2c, Config as I2cConfig, I2c},
     interrupt::software::SoftwareInterrupt,
-    peripherals::CPU_CTRL,
-    spi::master::{AnySpi, Config as SpiConfig, Spi},
+    peripherals::{CPU_CTRL, DMA_CH0},
+    spi::{
+        Mode,
+        master::{AnySpi, Config as SpiConfig, Spi},
+    },
     system::Stack,
     time::Rate,
 };
@@ -73,7 +76,7 @@ async fn app(s: Spawner, p: AppPeripherals<'static>) -> ! {
 
     // Initialize SPI
     defmt::info!("Initializing SPI...");
-    let config = SpiConfig::default();
+    let config = SpiConfig::default().with_frequency(Rate::from_mhz(2)).with_mode(Mode::_3);
     let spi = defmt::unwrap!(Spi::new(p.spi, config));
     let spi = spi.with_sck(p.spi_sclk).with_mosi(p.spi_mosi).with_miso(p.spi_miso).into_async();
     let spi = SPI.init(Mutex::new(spi));
@@ -85,6 +88,7 @@ async fn app(s: Spawner, p: AppPeripherals<'static>) -> ! {
     s.must_spawn(display::task(
         spi,
         display::DisplayPeripherals {
+            display_dma: p.display_dma,
             display_cs: p.display_cs,
             display_enable: p.display_enable,
             display_backlight: p.display_backlight,
@@ -99,7 +103,7 @@ async fn app(s: Spawner, p: AppPeripherals<'static>) -> ! {
     s.must_spawn(touch::task(i2c));
 
     loop {
-        Timer::after(Duration::from_secs(30)).await;
+        Timer::after_secs(30).await;
     }
 }
 
@@ -121,6 +125,7 @@ pub(crate) struct AppPeripherals<'a> {
     pub(crate) _sdcard_cs: AnyPin<'a>,
 
     // ST7701S Display
+    pub(crate) display_dma: DMA_CH0<'a>,
     pub(crate) display_enable: AnyPin<'a>,
     pub(crate) display_backlight: AnyPin<'a>,
     pub(crate) display_clock: AnyPin<'a>,

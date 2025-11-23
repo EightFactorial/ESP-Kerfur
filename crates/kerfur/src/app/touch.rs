@@ -1,7 +1,7 @@
 //! TODO
 
 use embassy_embedded_hal::shared_bus::asynch::i2c::I2cDevice;
-use embassy_time::{Duration, Timer};
+use embassy_time::Timer;
 use gt911_driver::{GT911, GT911Error};
 
 use super::I2C;
@@ -25,10 +25,10 @@ pub(super) async fn task(i2c: &'static I2C) -> ! {
         } else {
             defmt::error!("Failed to initialize touch sensor, {}", err);
         }
-        Timer::after(Duration::from_millis(100)).await;
+        Timer::after_millis(100).await;
         result = touch.init_async().await;
     }
-    defmt::info!("Touch sensor initialized!");
+    defmt::info!("Touch sensor configured!");
 
     loop {
         // Query for all touch points
@@ -51,6 +51,6 @@ pub(super) async fn task(i2c: &'static I2C) -> ! {
             }
         }
 
-        Timer::after(Duration::from_millis(25)).await;
+        Timer::after_millis(25).await;
     }
 }

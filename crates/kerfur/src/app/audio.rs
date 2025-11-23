@@ -2,6 +2,10 @@
 #![expect(dead_code, unused_imports, reason = "Drivers have not been written yet")]
 
 use embassy_embedded_hal::shared_bus::asynch::i2c::I2cDevice;
+use esp_hal::{
+    i2s::master::{Channels, Config as I2sConfig},
+    time::Rate,
+};
 
 // use es7210_driver::ES7210;
 // use es8311_driver::ES8311;
@@ -25,5 +29,9 @@ pub(super) async fn task(_i2c: &'static I2C) {
 
     // Send a signal that the peripherals were configured
     defmt::info!("Audio peripherals configured!");
-    crate::signal::AUDIO_ENABLE.signal(());
+    crate::signal::AUDIO_ENABLE.signal(
+        I2sConfig::new_tdm_philips()
+            .with_channels(Channels::MONO)
+            .with_sample_rate(Rate::from_hz(22050)),
+    );
 }

@@ -5,13 +5,14 @@
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel, signal::Signal,
 };
+use esp_hal::i2s::master::Config as I2sConfig;
 
 use crate::app::DisplayCommand;
 
 /// A [`Signal`] that enables the audio subsystem.
 ///
 /// Signaling this assumes that the peripherals have been configured.
-pub(crate) static AUDIO_ENABLE: Signal<CriticalSectionRawMutex, ()> = Signal::new();
+pub(crate) static AUDIO_ENABLE: Signal<CriticalSectionRawMutex, I2sConfig> = Signal::new();
 
 /// A [`Channel`] for sending commands to the display task.
 ///
