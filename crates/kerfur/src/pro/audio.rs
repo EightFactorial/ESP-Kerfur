@@ -14,7 +14,7 @@ pub(super) async fn task(p: AudioPeripherals<'static>) -> ! {
     let (_rx_buf, _rx_desc, _tx_buf, _tx_desc) = dma_buffers!(4 * 1024);
 
     // Wait until the audio peripherals are configured
-    let config = crate::signal::AUDIO_ENABLE.wait().await;
+    let config = crate::signal::AUDIO_CFG.wait().await;
 
     // Initialize I2S
     defmt::info!("Initializing I2S...");

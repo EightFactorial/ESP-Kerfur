@@ -7,15 +7,13 @@ use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
 use embassy_time::Timer;
 use esp_hal::{
     Async,
-    dma::{DmaRxBuf, DmaTxBuf},
-    dma_buffers,
     gpio::AnyPin,
     i2c::master::{AnyI2c, Config as I2cConfig, I2c},
     interrupt::software::SoftwareInterrupt,
-    peripherals::{CPU_CTRL, DMA_CH0},
+    peripherals::CPU_CTRL,
     spi::{
         Mode,
-        master::{AnySpi, Config as SpiConfig, Spi, SpiDmaBus},
+        master::{AnySpi, Config as SpiConfig, Spi},
     },
     system::Stack,
     time::Rate,
@@ -24,10 +22,8 @@ use esp_rtos::embassy::Executor;
 use static_cell::StaticCell;
 
 mod audio;
-mod touch;
-
 mod display;
-pub(crate) use display::DisplayCommand;
+mod touch;
 
 /// Create an [`Executor`] and run tasks on the application core.
 #[expect(static_mut_refs, reason = "Required to access mutable statics")]
@@ -59,7 +55,7 @@ pub(super) fn spawn(
 type NMutex<T> = Mutex<NoopRawMutex, T>;
 
 type I2C = NMutex<I2c<'static, Async>>;
-type SPI = NMutex<SpiDmaBus<'static, Async>>;
+type SPI = NMutex<Spi<'static, Async>>;
 
 /// The main task for the application core.
 #[embassy_executor::task]
@@ -78,25 +74,15 @@ async fn app(s: Spawner, p: AppPeripherals<'static>) -> ! {
 
     // Initialize SPI
     defmt::info!("Initializing SPI...");
-    let (rx_buf, rx_desc, tx_buf, tx_desc) = dma_buffers!(2 * 1024);
-    let dma_rx = defmt::unwrap!(DmaRxBuf::new(rx_desc, rx_buf));
-    let dma_tx = defmt::unwrap!(DmaTxBuf::new(tx_desc, tx_buf));
-
     let config = SpiConfig::default().with_frequency(Rate::from_mhz(2)).with_mode(Mode::_3);
     let spi = defmt::unwrap!(Spi::new(p.spi, config));
-    let spi = spi
-        .with_sck(p.spi_sclk)
-        .with_mosi(p.spi_mosi)
-        .with_miso(p.spi_miso)
-        .with_dma(p.i2c_dma)
-        .with_buffers(dma_rx, dma_tx)
-        .into_async();
-    let spi = SPI.init(Mutex::new(spi));
+    let spi = spi.with_sck(p.spi_sclk).with_mosi(p.spi_mosi).with_miso(p.spi_miso);
+    let spi = SPI.init(Mutex::new(spi.into_async()));
 
-    // Spawn the audio task
+    // Spawn the audio config task
     s.must_spawn(audio::task(i2c));
 
-    // Spawn the display task
+    // Spawn the display manager task
     s.must_spawn(display::task(
         spi,
         display::DisplayPeripherals {
@@ -126,7 +112,6 @@ pub(crate) struct AppPeripherals<'a> {
     pub(crate) i2c: AnyI2c<'a>,
     pub(crate) i2c_sda: AnyPin<'a>,
     pub(crate) i2c_scl: AnyPin<'a>,
-    pub(crate) i2c_dma: DMA_CH0<'a>,
 
     // SPI for SD Card and Display
     pub(crate) spi: AnySpi<'a>,

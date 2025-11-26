@@ -7,13 +7,11 @@ use esp_hal::{
     time::Rate,
 };
 
-// use es7210_driver::ES7210;
-// use es8311_driver::ES8311;
-use super::I2C;
+use crate::{app::I2C, signal::AUDIO_CFG};
 
-/// Address of the ES8311 audio codec
+/// Address of the ES8311 DAC
 const ES8311_ADDRESS: u8 = 0x5D;
-/// Address of the ES7210 microphone
+/// Address of the ES7210 ADC
 const ES7210_ADDRESS: u8 = 0x48;
 
 /// A task that configures the ES8311 and ES7210.
@@ -21,15 +19,17 @@ const ES7210_ADDRESS: u8 = 0x48;
 pub(super) async fn task(_i2c: &'static I2C) {
     defmt::info!("Preparing audio peripherals...");
 
-    defmt::info!("Configuring ES8311 audio codec...");
+    defmt::info!("Configuring ES8311 DAC...");
+    defmt::warn!("ES8311 driver not implemented yet!");
     // let _es8311 = Es8311::new(I2cDevice::new(i2c), ES8311_ADDRESS);
 
-    defmt::info!("Configuring ES7210 microphone...");
+    defmt::info!("Configuring ES7210 ADC...");
+    defmt::warn!("ES7210 driver not implemented yet!");
     // let _es7210 = Es7210::new(I2cDevice::new(i2c), ES7210_ADDRESS);
 
     // Send a signal that the peripherals were configured
     defmt::info!("Audio peripherals configured!");
-    crate::signal::AUDIO_ENABLE.signal(
+    AUDIO_CFG.signal(
         I2sConfig::new_tdm_philips()
             .with_channels(Channels::MONO)
             .with_sample_rate(Rate::from_hz(22050)),

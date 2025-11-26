@@ -14,10 +14,10 @@ workspace = true
 kerfur-display = { workspace = true, features = ["libm"] }
 
 # Driver Workspace
-es7210-driver = { workspace = true, features = ["defmt"] }
-es8311-driver = { workspace = true, features = ["defmt"] }
-gt911-driver = { workspace = true, features = ["defmt"] }
-st7701s-driver = { workspace = true, features = ["defmt", "embedded-graphics"] }
+ef-es7210 = { workspace = true }
+ef-es8311 = { workspace = true }
+ef-gt911 = { workspace = true }
+ef-st7701s = { workspace = true }
 
 # Embassy/Embedded
 embassy-embedded-hal = { workspace = true }

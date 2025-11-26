@@ -11,14 +11,14 @@ strip = "debuginfo"
 
 [workspace.dependencies]
 # Workspace
-kerfur = { version = "0.0.1", default-features = false, path = "crates/kerfur" }
+kerfur = { version = "0.0.1", path = "crates/kerfur" }
 kerfur-display = { version = "0.0.1", default-features = false, path = "crates/kerfur-display" }
 
 # Driver Workspace
-es7210-driver = { version = "0.0.1", default-features = false, path = "drivers/crates/es7210-driver" }
-es8311-driver = { version = "0.0.1", default-features = false, path = "drivers/crates/es8311-driver" }
-gt911-driver = { version = "0.0.1", default-features = false, path = "drivers/crates/gt911-driver" }
-st7701s-driver = { version = "0.0.1", default-features = false, path = "drivers/crates/st7701s-driver" }
+ef-es7210 = { version = "0.0.1", features = ["defmt"], git = "https://github.com/EightFactorial/embedded-drivers.git" }
+ef-es8311 = { version = "0.0.1", features = ["defmt"], git = "https://github.com/EightFactorial/embedded-drivers.git" }
+ef-gt911 = { version = "0.0.1", features = ["defmt"], git = "https://github.com/EightFactorial/embedded-drivers.git" }
+ef-st7701s = { version = "0.0.1", features = ["defmt", "embedded-graphics"], git = "https://github.com/EightFactorial/embedded-drivers.git" }
 
 # Embassy/Embedded
 embassy-embedded-hal = { version = "0.5.0", features = ["defmt", "time"] }

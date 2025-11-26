@@ -1,10 +1,10 @@
 //! TODO
 
+use ef_gt911::{GT911, GT911Error};
 use embassy_embedded_hal::shared_bus::asynch::i2c::I2cDevice;
 use embassy_time::Timer;
-use gt911_driver::{GT911, GT911Error};
 
-use super::I2C;
+use crate::app::I2C;
 
 /// Address of the GT911 touch sensor.
 const GT911_ADDRESS: u8 = 0x5D;
