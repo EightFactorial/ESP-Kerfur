@@ -1,7 +1,7 @@
 //! TODO
 
 use embedded_graphics::{
-    pixelcolor::{BinaryColor, Rgb888},
+    pixelcolor::{BinaryColor, Rgb565, Rgb666, Rgb888},
     prelude::*,
     primitives::PrimitiveStyle,
 };
@@ -81,14 +81,31 @@ macro_rules! binary_style {
 }
 
 /// A style that displays mimics a blue Kerfur.
-pub static BLUE: KerfurStyle<Rgb888> = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_CYAN);
+pub static BLUE_565: KerfurStyle<Rgb565> = binary_style!(Rgb565::CSS_BLACK, Rgb565::CSS_CYAN);
 /// A style that displays mimics a pink Kerfur.
-pub static PINK: KerfurStyle<Rgb888> = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_HOT_PINK);
+pub static PINK_565: KerfurStyle<Rgb565> = binary_style!(Rgb565::CSS_BLACK, Rgb565::CSS_HOT_PINK);
 /// A style that displays mimics a red Kerfur (has a green display).
-pub static RED: KerfurStyle<Rgb888> = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_GREEN);
-
+pub static RED_565: KerfurStyle<Rgb565> = binary_style!(Rgb565::CSS_BLACK, Rgb565::CSS_GREEN);
 /// A style that displays a white Kerfur.
-pub static WHITE: KerfurStyle<Rgb888> = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_WHITE);
+pub static WHITE_565: KerfurStyle<Rgb565> = binary_style!(Rgb565::CSS_BLACK, Rgb565::CSS_WHITE);
+
+/// A style that displays mimics a blue Kerfur.
+pub static BLUE_666: KerfurStyle<Rgb666> = binary_style!(Rgb666::CSS_BLACK, Rgb666::CSS_CYAN);
+/// A style that displays mimics a pink Kerfur.
+pub static PINK_666: KerfurStyle<Rgb666> = binary_style!(Rgb666::CSS_BLACK, Rgb666::CSS_HOT_PINK);
+/// A style that displays mimics a red Kerfur (has a green display).
+pub static RED_666: KerfurStyle<Rgb666> = binary_style!(Rgb666::CSS_BLACK, Rgb666::CSS_GREEN);
+/// A style that displays a white Kerfur.
+pub static WHITE_666: KerfurStyle<Rgb666> = binary_style!(Rgb666::CSS_BLACK, Rgb666::CSS_WHITE);
+
+/// A style that displays mimics a blue Kerfur.
+pub static BLUE_888: KerfurStyle<Rgb888> = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_CYAN);
+/// A style that displays mimics a pink Kerfur.
+pub static PINK_888: KerfurStyle<Rgb888> = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_HOT_PINK);
+/// A style that displays mimics a red Kerfur (has a green display).
+pub static RED_888: KerfurStyle<Rgb888> = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_GREEN);
+/// A style that displays a white Kerfur.
+pub static WHITE_888: KerfurStyle<Rgb888> = binary_style!(Rgb888::CSS_BLACK, Rgb888::CSS_WHITE);
 
 /// A style that displays a white Kerfur (used by mono-color displays).
 pub static BINARY_ON: KerfurStyle<BinaryColor> = binary_style!(BinaryColor::Off, BinaryColor::On);

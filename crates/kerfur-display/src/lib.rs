@@ -7,7 +7,7 @@ extern crate std;
 use core::ops::{Deref, DerefMut};
 
 use embedded_graphics::{
-    pixelcolor::{BinaryColor, Rgb888},
+    pixelcolor::{BinaryColor, Rgb565, Rgb666, Rgb888},
     prelude::*,
 };
 
@@ -149,29 +149,81 @@ impl<D: DrawTargetExt> DerefMut for KerfurDisplay<'_, D> {
 
 // -------------------------------------------------------------------------------------------------
 
-impl<D: DrawTargetExt<Color = Rgb888>> KerfurDisplay<'static, D> {
+impl<D: DrawTargetExt<Color = Rgb565>> KerfurDisplay<'static, D> {
     /// Create a new blue [`KerfurDisplay`].
     ///
     /// Uses the [`BLUE`](crate::style::BLUE) style.
     #[inline]
-    pub fn blue<E: KerfurExpression>(display: D, expression: E) -> Self {
-        Self::new_with_style(display, &crate::style::BLUE, expression)
+    pub fn blue_565<E: KerfurExpression>(display: D, expression: E) -> Self {
+        Self::new_with_style(display, &crate::style::BLUE_565, expression)
     }
 
     /// Create a new pink [`KerfurDisplay`].
     ///
     /// Uses the [`PINK`](crate::style::PINK) style.
     #[inline]
-    pub fn pink<E: KerfurExpression>(display: D, expression: E) -> Self {
-        Self::new_with_style(display, &crate::style::PINK, expression)
+    pub fn pink_565<E: KerfurExpression>(display: D, expression: E) -> Self {
+        Self::new_with_style(display, &crate::style::PINK_565, expression)
     }
 
     /// Create a new red [`KerfurDisplay`].
     ///
     /// Uses the [`RED`](crate::style::RED) style.
     #[inline]
-    pub fn red<E: KerfurExpression>(display: D, expression: E) -> Self {
-        Self::new_with_style(display, &crate::style::RED, expression)
+    pub fn red_565<E: KerfurExpression>(display: D, expression: E) -> Self {
+        Self::new_with_style(display, &crate::style::RED_565, expression)
+    }
+}
+
+impl<D: DrawTargetExt<Color = Rgb666>> KerfurDisplay<'static, D> {
+    /// Create a new blue [`KerfurDisplay`].
+    ///
+    /// Uses the [`BLUE`](crate::style::BLUE) style.
+    #[inline]
+    pub fn blue_666<E: KerfurExpression>(display: D, expression: E) -> Self {
+        Self::new_with_style(display, &crate::style::BLUE_666, expression)
+    }
+
+    /// Create a new pink [`KerfurDisplay`].
+    ///
+    /// Uses the [`PINK`](crate::style::PINK) style.
+    #[inline]
+    pub fn pink_666<E: KerfurExpression>(display: D, expression: E) -> Self {
+        Self::new_with_style(display, &crate::style::PINK_666, expression)
+    }
+
+    /// Create a new red [`KerfurDisplay`].
+    ///
+    /// Uses the [`RED`](crate::style::RED) style.
+    #[inline]
+    pub fn red_666<E: KerfurExpression>(display: D, expression: E) -> Self {
+        Self::new_with_style(display, &crate::style::RED_666, expression)
+    }
+}
+
+impl<D: DrawTargetExt<Color = Rgb888>> KerfurDisplay<'static, D> {
+    /// Create a new blue [`KerfurDisplay`].
+    ///
+    /// Uses the [`BLUE`](crate::style::BLUE) style.
+    #[inline]
+    pub fn blue_888<E: KerfurExpression>(display: D, expression: E) -> Self {
+        Self::new_with_style(display, &crate::style::BLUE_888, expression)
+    }
+
+    /// Create a new pink [`KerfurDisplay`].
+    ///
+    /// Uses the [`PINK`](crate::style::PINK) style.
+    #[inline]
+    pub fn pink_888<E: KerfurExpression>(display: D, expression: E) -> Self {
+        Self::new_with_style(display, &crate::style::PINK_888, expression)
+    }
+
+    /// Create a new red [`KerfurDisplay`].
+    ///
+    /// Uses the [`RED`](crate::style::RED) style.
+    #[inline]
+    pub fn red_888<E: KerfurExpression>(display: D, expression: E) -> Self {
+        Self::new_with_style(display, &crate::style::RED_888, expression)
     }
 }
 

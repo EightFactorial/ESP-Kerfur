@@ -3,7 +3,7 @@
 
 use std::time::{Duration, Instant};
 
-use embedded_graphics_core::{pixelcolor::Rgb888, prelude::*};
+use embedded_graphics_core::{pixelcolor::Rgb565, prelude::*};
 use embedded_graphics_simulator::{
     OutputSettings, SimulatorDisplay, SimulatorEvent, Window,
     sdl2::{Keycode, MouseButton},
@@ -17,8 +17,8 @@ const FRAMETIME: f32 = 1.0 / FRAMERATE as f32;
 fn main() {
     let mut window = Window::new("Kerfur Simulator", &OutputSettings::default());
 
-    let display = SimulatorDisplay::<Rgb888>::new(Size::new(480, 480));
-    let mut kerfur = KerfurDisplay::blue(display, KerfurEmote::Neutral);
+    let display = SimulatorDisplay::<Rgb565>::new(Size::new(480, 480));
+    let mut kerfur = KerfurDisplay::blue_565(display, KerfurEmote::Neutral);
 
     let mut neutral = true;
     let mut blink_counter = 0u32;
@@ -28,12 +28,12 @@ fn main() {
 
     loop {
         // Draw the kerfur display
-        kerfur.clear(Rgb888::BLACK).unwrap();
+        kerfur.clear(Rgb565::BLACK).unwrap();
         kerfur.draw(5.).unwrap();
 
         // Simulate spaces between pixels
         kerfur
-            .draw_iter(ScanlineIterator::<_, 2>::new(Point::new_equal(480), Rgb888::BLACK))
+            .draw_iter(ScanlineIterator::<_, 2>::new(Point::new_equal(480), Rgb565::BLACK))
             .unwrap();
 
         // Update the window and handle events

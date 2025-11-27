@@ -4,7 +4,12 @@
 #![no_std]
 
 use embassy_executor::Spawner;
-use esp_hal::{interrupt::software::SoftwareInterruptControl, timer::timg::TimerGroup};
+use esp_hal::{
+    interrupt::software::SoftwareInterruptControl,
+    mcpwm::{McPwm, PeripheralClockConfig},
+    time::Rate,
+    timer::timg::TimerGroup,
+};
 
 use crate::{app::AppPeripherals, pro::ProPeripherals};
 
@@ -26,6 +31,7 @@ async fn main(spawner: Spawner) {
     defmt::info!("Started scheduler");
 
     // Create peripheral structs
+    let clock_cfg = defmt::unwrap!(PeripheralClockConfig::with_frequency(Rate::from_mhz(40)));
     let (app, pro) = (
         AppPeripherals {
             i2c: peripherals.I2C0.into(),
@@ -39,7 +45,8 @@ async fn main(spawner: Spawner) {
             display_cs: peripherals.GPIO39.into(),
             _sdcard_cs: peripherals.GPIO42.into(),
 
-            display_enable: peripherals.GPIO18.into(),
+            display_de: peripherals.GPIO18.into(),
+            display_pwm: McPwm::new(peripherals.MCPWM0, clock_cfg),
             display_backlight: peripherals.GPIO38.into(),
             display_clock: peripherals.GPIO21.into(),
             display_vsync: peripherals.GPIO17.into(),

@@ -36,5 +36,5 @@ esp-rtos = { workspace = true }
 
 # Other
 defmt = { workspace = true }
-display-interface-spi = { workspace = true }
+embedded-graphics = { workspace = true }
 static_cell = { workspace = true }

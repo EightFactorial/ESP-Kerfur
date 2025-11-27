@@ -24,7 +24,7 @@ esp_bootloader_esp_idf::esp_app_desc!();
 pub(super) fn init() -> Peripherals {
     // Initialize the microcontroller
     let config = PsramConfig { ram_frequency: SpiRamFreq::Freq80m,  ..PsramConfig::default() };
-    let peripherals = esp_hal::init(Config::default().with_cpu_clock(CpuClock::max()).with_psram(config));
+    let peripherals = esp_hal::init(Config::default().with_cpu_clock(CpuClock::_240MHz).with_psram(config));
 
     // Initialize the psram allocator
     psram_allocator!(peripherals.PSRAM, esp_hal::psram);

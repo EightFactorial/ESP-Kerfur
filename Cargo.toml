@@ -18,7 +18,7 @@ kerfur-display = { version = "0.0.1", default-features = false, path = "crates/k
 ef-es7210 = { version = "0.0.1", features = ["defmt"], git = "https://github.com/EightFactorial/embedded-drivers.git" }
 ef-es8311 = { version = "0.0.1", features = ["defmt"], git = "https://github.com/EightFactorial/embedded-drivers.git" }
 ef-gt911 = { version = "0.0.1", features = ["defmt"], git = "https://github.com/EightFactorial/embedded-drivers.git" }
-ef-st7701s = { version = "0.0.1", features = ["defmt", "embedded-graphics"], git = "https://github.com/EightFactorial/embedded-drivers.git" }
+ef-st7701s = { version = "0.0.1", features = ["defmt"], git = "https://github.com/EightFactorial/embedded-drivers.git" }
 
 # Embassy/Embedded
 embassy-embedded-hal = { version = "0.5.0", features = ["defmt", "time"] }
@@ -40,12 +40,9 @@ esp-bootloader-esp-idf = { version = "0.4.0", features = ["defmt", "esp32s3"] }
 # Other
 bitflags = { version = "2.10.0" }
 defmt = { version = "1.0.1", features = ["ip_in_core"] }
-display-interface = { version = "0.5.0" }
-display-interface-spi = { version = "0.5.0" }
 embedded-graphics-core = { version = "0.4.0" }
 embedded-graphics-simulator = { version = "0.8.0", features = ["with-sdl"] }
 libm = { version = "0.2.15" }
-port-expander = { version = "0.6.5" }
 sdl2 = { version = "0.38.0" }
 static_cell = { version = "2.1.1", features = ["nightly"] }
 

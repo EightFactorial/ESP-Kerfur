@@ -2,15 +2,21 @@
 //!
 //! Cannot access values outside of this module.
 
+use core::cell::RefCell;
+
 use embassy_executor::Spawner;
-use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
+use embassy_sync::{
+    blocking_mutex::{Mutex as BlockingMutex, raw::NoopRawMutex},
+    mutex::Mutex as AsyncMutex,
+};
 use embassy_time::Timer;
 use esp_hal::{
-    Async,
+    Async, Blocking,
     gpio::AnyPin,
     i2c::master::{AnyI2c, Config as I2cConfig, I2c},
     interrupt::software::SoftwareInterrupt,
-    peripherals::CPU_CTRL,
+    mcpwm::McPwm,
+    peripherals::{CPU_CTRL, MCPWM0},
     spi::{
         Mode,
         master::{AnySpi, Config as SpiConfig, Spi},
@@ -52,10 +58,11 @@ pub(super) fn spawn(
 
 // -------------------------------------------------------------------------------------------------
 
-type NMutex<T> = Mutex<NoopRawMutex, T>;
+type AMutex<T> = AsyncMutex<NoopRawMutex, T>;
+type BMutex<T> = BlockingMutex<NoopRawMutex, T>;
 
-type I2C = NMutex<I2c<'static, Async>>;
-type SPI = NMutex<Spi<'static, Async>>;
+type I2C = AMutex<I2c<'static, Async>>;
+type SPI = BMutex<RefCell<Spi<'static, Blocking>>>;
 
 /// The main task for the application core.
 #[embassy_executor::task]
@@ -70,14 +77,14 @@ async fn app(s: Spawner, p: AppPeripherals<'static>) -> ! {
     let config = I2cConfig::default().with_frequency(Rate::from_khz(100));
     let i2c = defmt::unwrap!(I2c::new(p.i2c, config));
     let i2c = i2c.with_sda(p.i2c_sda).with_scl(p.i2c_scl).into_async();
-    let i2c = I2C.init(Mutex::new(i2c));
+    let i2c = I2C.init(AsyncMutex::new(i2c));
 
     // Initialize SPI
     defmt::info!("Initializing SPI...");
     let config = SpiConfig::default().with_frequency(Rate::from_mhz(2)).with_mode(Mode::_3);
     let spi = defmt::unwrap!(Spi::new(p.spi, config));
     let spi = spi.with_sck(p.spi_sclk).with_mosi(p.spi_mosi).with_miso(p.spi_miso);
-    let spi = SPI.init(Mutex::new(spi.into_async()));
+    let spi = SPI.init(BlockingMutex::new(RefCell::new(spi)));
 
     // Spawn the audio config task
     s.must_spawn(audio::task(i2c));
@@ -87,7 +94,8 @@ async fn app(s: Spawner, p: AppPeripherals<'static>) -> ! {
         spi,
         display::DisplayPeripherals {
             display_cs: p.display_cs,
-            display_enable: p.display_enable,
+            display_de: p.display_de,
+            display_pwm: p.display_pwm,
             display_backlight: p.display_backlight,
             display_clock: p.display_clock,
             display_vsync: p.display_vsync,
@@ -122,7 +130,8 @@ pub(crate) struct AppPeripherals<'a> {
     pub(crate) _sdcard_cs: AnyPin<'a>,
 
     // ST7701S Display
-    pub(crate) display_enable: AnyPin<'a>,
+    pub(crate) display_de: AnyPin<'a>,
+    pub(crate) display_pwm: McPwm<'a, MCPWM0<'a>>,
     pub(crate) display_backlight: AnyPin<'a>,
     pub(crate) display_clock: AnyPin<'a>,
     pub(crate) display_vsync: AnyPin<'a>,
